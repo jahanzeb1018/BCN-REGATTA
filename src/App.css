@@ -1,0 +1,133 @@
+.auth-form-container {
+  max-width: 400px;
+  margin: 5rem auto;
+  padding: 2rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background-color: #f9f9f9;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-form label {
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.login-form input {
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 5px;
+  background: #007bff;
+  color: white;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+button:hover {
+  background: #0056b3;
+}
+
+.link-btn {
+  background: none;
+  color: #646cff;
+  border: none;
+  cursor: pointer;
+  margin-top: 1rem;
+  text-decoration: underline;
+}
+
+.link-btn:hover {
+  color: #535bf2;
+}
+
+
+#ocean-container {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+
+#scene-container {
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+.login-container, .map2d-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #222;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+.twoD-btn {
+  position: absolute;
+  top: 20px;
+  right: 120px;
+  padding: 10px 20px;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 5px;
+  background: #007bff;
+  color: white;
+  cursor: pointer;
+}
+
+.twoD-btn:hover {
+  background: #0056b3;
+}
+
+.floating-menu {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1000;
+}
+
+.menu-btn {
+  background: rgba(0, 123, 255, 0.9);
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.menu-btn:hover {
+  background: rgba(0, 86, 179, 1);
+}
+
+.logout-btn {
+  background: rgba(255, 69, 58, 0.9);
+}
+
+.logout-btn:hover {
+  background: rgba(200, 40, 30, 1);
+}

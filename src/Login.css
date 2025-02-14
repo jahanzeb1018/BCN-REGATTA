@@ -1,0 +1,75 @@
+.login-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    color: white;
+    font-family: Arial, sans-serif;
+  }
+  
+  .auth-form-container {
+    max-width: 400px;
+    width: 100%;
+    padding: 2rem;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    text-align: center;
+  }
+  
+  .auth-form-container h2 {
+    margin-bottom: 1.5rem;
+    color: #333;
+  }
+  
+  .login-form {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .login-form input {
+    padding: 0.8rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: #f9f9f9;
+    transition: border-color 0.3s ease;
+  }
+  
+  .login-form input:focus {
+    border-color: #6a11cb;
+    outline: none;
+  }
+  
+  button {
+    padding: 0.8rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  
+  button:hover {
+    background: linear-gradient(135deg, #2575fc, #6a11cb);
+  }
+  
+  .register-link {
+    margin-top: 1rem;
+    color: #333;
+  }
+  
+  .register-link a {
+    color: #6a11cb;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  
+  .register-link a:hover {
+    text-decoration: underline;
+  }
