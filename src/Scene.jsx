@@ -5,6 +5,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { Water } from "three/examples/jsm/objects/Water.js";
 import { Sky } from "three/examples/jsm/objects/Sky.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import MiniMap2D from "./MiniMap2D"; // Importa el mini mapa
 import "./App.css";
 
 const Scene = () => {
@@ -25,7 +26,6 @@ const Scene = () => {
         this.balanceAmplitude = 0.07;
         this.balanceFrequency = 0.001;
 
-        // 🚀 Cargar el modelo de manera asíncrona
         loader.load("/src/assets/boat/scene.gltf", (gltf) => {
           scene.add(gltf.scene);
           gltf.scene.scale.set(3, 3, 3);
@@ -193,6 +193,9 @@ const Scene = () => {
     <div ref={mountRef} id="scene-container">
       <div className="floating-menu">
         <button className="menu-btn" onClick={() => navigate("/map")}>🗺️ Vista 2D</button>
+      </div>
+      <div className="mini-map-container">
+        <MiniMap2D /> {/* Agrega el mini mapa aquí */}
       </div>
     </div>
   );

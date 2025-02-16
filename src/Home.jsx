@@ -1,6 +1,19 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import "./Home.css";
+import map2d from "/src/assets/map2d-example.png";
+import map3d from "/src/assets/map3d-example.png";
+import efficiency from "/src/assets/efficiency-icon.png";
+import precision from "/src/assets/precision-icon.png";
+import innovation from "/src/assets/innovation-icon.png";
+import mapIcon from "/src/assets/map-icon.png";
+import Icon3D from "/src/assets/3d-icon.png";
+import chatIcon from "/src/assets/chat-icon.png";
+import reactIcon from "/src/assets/react-icon.png";
+import threejsIcon from "/src/assets/threejs-icon.png";
+import leafletIcon from "/src/assets/leaflet-icon.png";
+import websocketIcon from "/src/assets/websocket-icon.png";
+
 
 const Home = () => {
   return (
@@ -39,7 +52,7 @@ const Home = () => {
               </p>
             </div>
             <div className="map-image">
-              <img src="/src/assets/map2d-example.png" alt="2D Map" />
+              <img src={map2d} alt="2D Map" />
             </div>
           </div>
         </div>
@@ -55,7 +68,7 @@ const Home = () => {
               </p>
             </div>
             <div className="map-image">
-              <img src="/src/assets/map3d-example.png" alt="3D Map" />
+              <img src={map3d} alt="3D Map" />
             </div>
           </div>
         </div>
@@ -70,17 +83,17 @@ const Home = () => {
             </p>
             <div className="purpose-cards">
               <div className="purpose-card" data-aos="zoom-in" data-aos-delay="200">
-                <img src="/src/assets/efficiency-icon.png" alt="Efficiency" className="purpose-icon" />
+                <img src={efficiency} alt="Efficiency" className="purpose-icon" />
                 <h4>Efficiency</h4>
                 <p>Optimize the tracking and management of maritime fleets.</p>
               </div>
               <div className="purpose-card" data-aos="zoom-in" data-aos-delay="300">
-                <img src="/src/assets/precision-icon.png" alt="Precision" className="purpose-icon" />
+                <img src={precision} alt="Precision" className="purpose-icon" />
                 <h4>Precision</h4>
                 <p>Provide accurate and reliable real-time data.</p>
               </div>
               <div className="purpose-card" data-aos="zoom-in" data-aos-delay="400">
-                <img src="/src/assets/innovation-icon.png" alt="Innovation" className="purpose-icon" />
+                <img src={innovation} alt="Innovation" className="purpose-icon" />
                 <h4>Innovation</h4>
                 <p>Use cutting-edge technology for a unique experience.</p>
               </div>
@@ -93,19 +106,19 @@ const Home = () => {
           <h3 data-aos="fade-up">🌟 Key Features</h3>
           <div className="feature-cards">
             <div className="feature-card" data-aos="fade-right" data-aos-delay="200">
-              <img src="/src/assets/map-icon.png" alt="2D Map" className="feature-icon" />
+              <img src={mapIcon} alt="2D Map" className="feature-icon" />
               <h4>📍 Real-Time 2D Map</h4>
               <p>Visualize ship locations on an interactive map with real-time updates.</p>
               <div className="feature-overlay"></div>
             </div>
             <div className="feature-card" data-aos="fade-right" data-aos-delay="300">
-              <img src="/src/assets/3d-icon.png" alt="3D View" className="feature-icon" />
+              <img src={Icon3D} alt="3D View" className="feature-icon" />
               <h4>🌐 Immersive 3D View</h4>
               <p>Explore a 3D interactive view for a more realistic and detailed experience.</p>
               <div className="feature-overlay"></div>
             </div>
             <div className="feature-card" data-aos="fade-right" data-aos-delay="400">
-              <img src="/src/assets/chat-icon.png" alt="Chat" className="feature-icon" />
+              <img src={chatIcon} alt="Chat" className="feature-icon" />
               <h4>💬 Real-Time Chat</h4>
               <p>Communicate with other users through an integrated chat.</p>
               <div className="feature-overlay"></div>
@@ -121,10 +134,10 @@ const Home = () => {
             <strong>Leaflet</strong>, and <strong>WebSockets</strong> to deliver a seamless and real-time user experience.
           </p>
           <div className="tech-icons">
-            <img src="/src/assets/react-icon.png" alt="React" className="tech-icon" data-aos="zoom-in" data-aos-delay="200" />
-            <img src="/src/assets/threejs-icon.png" alt="Three.js" className="tech-icon" data-aos="zoom-in" data-aos-delay="300" />
-            <img src="/src/assets/leaflet-icon.png" alt="Leaflet" className="tech-icon" data-aos="zoom-in" data-aos-delay="400" />
-            <img src="/src/assets/websocket-icon.png" alt="WebSockets" className="tech-icon" data-aos="zoom-in" data-aos-delay="500" />
+            <img src={reactIcon} alt="React" className="tech-icon" data-aos="zoom-in" data-aos-delay="200" />
+            <img src={threejsIcon} alt="Three.js" className="tech-icon" data-aos="zoom-in" data-aos-delay="300" />
+            <img src={leafletIcon} alt="Leaflet" className="tech-icon" data-aos="zoom-in" data-aos-delay="400" />
+            <img src={websocketIcon} alt="WebSockets" className="tech-icon" data-aos="zoom-in" data-aos-delay="500" />
           </div>
         </div>
 
