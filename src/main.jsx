@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import { HashRouter } from "react-router-dom"; // Usamos HashRouter sin basename
 import App from "./App";
 import "aos/dist/aos.css"; // Importar los estilos de AOS
 import AOS from "aos"; // Importar AOS
@@ -13,7 +13,7 @@ AOS.init({
 });
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <BrowserRouter basename="/BCN-REGATTA/">
+  <HashRouter>
     <App />
-  </BrowserRouter>
+  </HashRouter>
 );
