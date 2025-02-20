@@ -14,9 +14,10 @@ import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 // Importa los modelos y la textura desde tus assets
 import boatModel from "/src/assets/boat/boat2.glb";
 import buoyModel from "/src/assets/buoy/buoy.glb";
-import barcelonaModel from "/src/assets/barcelona/BarcelonV4.glb";
+import barcelonaModel from "/src/assets/barcelona/BCN v10.glb";
 import waterNormals from "/src/assets/waternormals.jpg";
 
+// Constantes de geolocalización y escala
 const LAT0 = 41.383787222715334;
 const LON0 = 2.1996051201829054;
 const METERS_PER_DEG_LAT = 111320;
@@ -32,6 +33,11 @@ function latLonToWorld(lat, lon) {
     z: z * WORLD_SCALE,
   };
 }
+
+// Caches globales para evitar recargas de modelos
+let boatModelCache = null;
+let buoyModelCache = null;
+let barcelonaModelCache = null;
 
 const Scene = () => {
   const location = useLocation();
@@ -110,7 +116,7 @@ const Scene = () => {
     scene.add(ambientLight);
 
     // Agua
-    const waterGeometry = new THREE.PlaneGeometry(100000, 100000);
+    const waterGeometry = new THREE.PlaneGeometry(19000, 20000);
     water = new Water(waterGeometry, {
       textureWidth: 512,
       textureHeight: 512,
@@ -126,6 +132,9 @@ const Scene = () => {
       distortionScale: 3.7,
     });
     water.rotation.x = -Math.PI / 2;
+    water.position.x = 5000;
+    water.position.z = 4000; 
+
     scene.add(water);
 
     // Cielo
@@ -179,8 +188,9 @@ const Scene = () => {
   }
 
   let lastFrameTime = performance.now();
+  let animationId; // para cancelar la animación en el desmontaje
   function animate() {
-    requestAnimationFrame(animate);
+    animationId = requestAnimationFrame(animate);
     const now = performance.now();
     const deltaTime = (now - lastFrameTime) / 1000.0;
     lastFrameTime = now;
@@ -234,8 +244,7 @@ const Scene = () => {
     renderer.render(scene, camera);
   }
 
-  let barcelona = null;
-  // Clases para Barco, Boya y Barcelona
+  // Clases para Barco, Boya y Barcelona con cacheo de modelos
 
   class Boat {
     constructor() {
@@ -249,13 +258,24 @@ const Scene = () => {
       this.smoothness = 0.01;
       this.balanceAmplitude = 0.07;
       this.balanceFrequency = 0.001;
-      loader.load(boatModel, (gltf) => {
-        scene.add(gltf.scene);
-        gltf.scene.scale.set(2, 2, 2);
-        gltf.scene.position.set(0, 0, 0);
-        gltf.scene.rotation.y = 0;
-        this.boat = gltf.scene;
-      });
+      if (boatModelCache) {
+        const clone = boatModelCache.scene.clone(true);
+        clone.scale.set(2, 2, 2);
+        clone.position.set(0, 0, 0);
+        clone.rotation.y = 0;
+        this.boat = clone;
+        scene.add(clone);
+      } else {
+        loader.load(boatModel, (gltf) => {
+          boatModelCache = gltf;
+          const clone = gltf.scene.clone(true);
+          clone.scale.set(2, 2, 2);
+          clone.position.set(0, 0, 0);
+          clone.rotation.y = 0;
+          this.boat = clone;
+          scene.add(clone);
+        });
+      }
     }
     setLocation({ latitude, longitude, azimuth, speed, pitch, roll }) {
       this.lat = latitude;
@@ -299,13 +319,24 @@ const Scene = () => {
       this.smoothness = 0.01;
       this.balanceAmplitude = 0.05;
       this.balanceFrequency = 0.001;
-      loader.load(buoyModel, (gltf) => {
-        scene.add(gltf.scene);
-        gltf.scene.scale.set(2, 2, 2);
-        gltf.scene.position.set(0, 0, 0);
-        gltf.scene.rotation.y = 0;
-        this.mesh = gltf.scene;
-      });
+      if (buoyModelCache) {
+        const clone = buoyModelCache.scene.clone(true);
+        clone.scale.set(2, 2, 2);
+        clone.position.set(0, 0, 0);
+        clone.rotation.y = 0;
+        this.mesh = clone;
+        scene.add(clone);
+      } else {
+        loader.load(buoyModel, (gltf) => {
+          buoyModelCache = gltf;
+          const clone = gltf.scene.clone(true);
+          clone.scale.set(2, 2, 2);
+          clone.position.set(0, 0, 0);
+          clone.rotation.y = 0;
+          this.mesh = clone;
+          scene.add(clone);
+        });
+      }
     }
     update(deltaTime) {
       if (!this.mesh) return;
@@ -329,12 +360,21 @@ const Scene = () => {
 
   class Barcelona {
     constructor() {
-      loader.load(barcelonaModel, (gltf) => {
-        scene.add(gltf.scene);
-        gltf.scene.scale.set(WORLD_SCALE, WORLD_SCALE, WORLD_SCALE);
-        gltf.scene.position.set(0, 10, 0);
-        gltf.scene.rotation.y = 0;
-      });
+      if (barcelonaModelCache) {
+        const clone = barcelonaModelCache.scene.clone(true);
+        clone.scale.set(WORLD_SCALE, WORLD_SCALE, WORLD_SCALE);
+        clone.position.set(0, -50, 0);
+        clone.rotation.y = 0;
+        scene.add(clone);
+      } else {
+        loader.load(barcelonaModel, (gltf) => {
+          barcelonaModelCache = gltf;
+          gltf.scene.scale.set(WORLD_SCALE, WORLD_SCALE, WORLD_SCALE);
+          gltf.scene.position.set(0, -50, 0);
+          gltf.scene.rotation.y = 0;
+          scene.add(gltf.scene);
+        });
+      }
     }
     update() {
       // Si se requiere animar algo de la ciudad
@@ -343,8 +383,10 @@ const Scene = () => {
 
   useEffect(() => {
     init();
-    barcelona = new Barcelona();
+    // Instanciar la ciudad (Barcelona)
+    new Barcelona();
 
+    // Conexión al socket
     const socket = io("https://server-production-c33c.up.railway.app", {
       query: { role: "viewer" },
     });
@@ -407,7 +449,28 @@ const Scene = () => {
     animate();
 
     return () => {
-      if (mountRef.current) {
+      // Cancelar el bucle de animación
+      cancelAnimationFrame(animationId);
+      // Eliminar el event listener de resize
+      window.removeEventListener("resize", onWindowResize);
+      // Desconectar controles
+      if (controls) controls.dispose();
+      // Desconectar socket
+      socket.disconnect();
+      // Recorrer la escena para disponer de geometrías, materiales y texturas
+      scene.traverse((object) => {
+        if (!object.isMesh) return;
+        if (object.geometry) object.geometry.dispose();
+        if (object.material) {
+          if (Array.isArray(object.material)) {
+            object.material.forEach((material) => material.dispose());
+          } else {
+            object.material.dispose();
+          }
+        }
+      });
+      // Disponer el renderer y remover el canvas del DOM
+      if (mountRef.current && renderer.domElement) {
         mountRef.current.removeChild(renderer.domElement);
       }
       renderer.dispose();
