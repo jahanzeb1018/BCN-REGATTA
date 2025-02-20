@@ -11,6 +11,12 @@ import MiniMap2D from "./MiniMap2D";
 import "./App.css";
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 
+// Importa los modelos y la textura desde tus assets
+import boatModel from "/src/assets/boat/boat2.glb";
+import buoyModel from "/src/assets/buoy/buoy.glb";
+import barcelonaModel from "/src/assets/barcelona/BarcelonV4.glb";
+import waterNormals from "/src/assets/waternormals.jpg";
+
 const LAT0 = 41.383787222715334;
 const LON0 = 2.1996051201829054;
 const METERS_PER_DEG_LAT = 111320;
@@ -34,13 +40,13 @@ const Scene = () => {
 
   // Variables globales de Three.js
   let camera, scene, renderer, controls, water, sun;
-  let sky; // Para el cielo, necesario en updateSun
+  let sky; // Referencia al cielo
   const loader = new GLTFLoader();
   const dracoLoader = new DRACOLoader();
   dracoLoader.setDecoderPath("https://www.gstatic.com/draco/v1/decoders/");
   loader.setDRACOLoader(dracoLoader);
 
-  // Diccionarios para barcos y boyas
+  // Diccionarios y arrays para barcos y boyas
   const boatsMap = {};
   const boatsArray = [];
   const buoysMap = {};
@@ -109,7 +115,7 @@ const Scene = () => {
       textureWidth: 512,
       textureHeight: 512,
       waterNormals: new THREE.TextureLoader().load(
-        "src/assets/waternormals.jpg",
+        waterNormals,
         (texture) => {
           texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
         }
@@ -229,7 +235,8 @@ const Scene = () => {
   }
 
   let barcelona = null;
-  // Clases para barco, boya y Barcelona
+  // Clases para Barco, Boya y Barcelona
+
   class Boat {
     constructor() {
       this.boat = null;
@@ -242,7 +249,7 @@ const Scene = () => {
       this.smoothness = 0.01;
       this.balanceAmplitude = 0.07;
       this.balanceFrequency = 0.001;
-      loader.load("/src/assets/boat/boat2.glb", (gltf) => {
+      loader.load(boatModel, (gltf) => {
         scene.add(gltf.scene);
         gltf.scene.scale.set(2, 2, 2);
         gltf.scene.position.set(0, 0, 0);
@@ -292,7 +299,7 @@ const Scene = () => {
       this.smoothness = 0.01;
       this.balanceAmplitude = 0.05;
       this.balanceFrequency = 0.001;
-      loader.load("/src/assets/buoy/buoy.glb", (gltf) => {
+      loader.load(buoyModel, (gltf) => {
         scene.add(gltf.scene);
         gltf.scene.scale.set(2, 2, 2);
         gltf.scene.position.set(0, 0, 0);
@@ -322,7 +329,7 @@ const Scene = () => {
 
   class Barcelona {
     constructor() {
-      loader.load("/src/assets/barcelona/BarcelonV4.glb", (gltf) => {
+      loader.load(barcelonaModel, (gltf) => {
         scene.add(gltf.scene);
         gltf.scene.scale.set(WORLD_SCALE, WORLD_SCALE, WORLD_SCALE);
         gltf.scene.position.set(0, 10, 0);
@@ -341,6 +348,7 @@ const Scene = () => {
     const socket = io("https://server-production-c33c.up.railway.app", {
       query: { role: "viewer" },
     });
+
     socket.on("assignBoatInfo", (boatData) => {
       const { name } = boatData;
       if (!name) return;
@@ -350,6 +358,7 @@ const Scene = () => {
         boatsArray.push(newBoat);
       }
     });
+
     socket.on("updateLocation", (boatInfo) => {
       const { name } = boatInfo;
       if (!name) return;
@@ -367,10 +376,12 @@ const Scene = () => {
         roll: boatInfo.roll,
       });
     });
+
     socket.on("boatFinished", (data) => {
       const { name } = data;
       removeBoatFromScene(name);
     });
+
     socket.on("buoys", (buoysData) => {
       buoysData.forEach((b) => {
         if (!buoysMap[b.id]) {
@@ -380,6 +391,7 @@ const Scene = () => {
         }
       });
     });
+
     function removeBoatFromScene(boatName) {
       const boatInstance = boatsMap[boatName];
       if (boatInstance && boatInstance.boat) {
@@ -391,7 +403,9 @@ const Scene = () => {
         boatsArray.splice(index, 1);
       }
     }
+
     animate();
+
     return () => {
       if (mountRef.current) {
         mountRef.current.removeChild(renderer.domElement);
