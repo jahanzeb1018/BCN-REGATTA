@@ -8,11 +8,28 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    // Add your registration logic here
-    alert("Registration successful");
-    navigate("/login"); // Redirect to the Login page after registration
+    try {
+      const response = await fetch("https://tu-backend-en-railway.com/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, email, password }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert("Registration successful");
+        navigate("/login"); // Redirigir al login después del registro
+      } else {
+        alert(data.error || "Error al registrar usuario");
+      }
+    } catch (error) {
+      console.error("Error al registrar usuario:", error);
+      alert("Error al registrar usuario");
+    }
   };
 
   return (
