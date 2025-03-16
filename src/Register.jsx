@@ -14,7 +14,7 @@ const Register = () => {
 
     try {
       // Send a POST request to the register endpoint
-      const response = await fetch("https:server-production-c33c.up.railway.app/register", {
+      const response = await fetch("https://server-production-c33c.up.railway.app/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
