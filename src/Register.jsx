@@ -6,12 +6,15 @@ const Register = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
+
     try {
-      const response = await fetch("https://tu-backend-en-railway.com/register", {
+      // Send a POST request to the register endpoint
+      const response = await fetch("https:server-production-c33c.up.railway.app/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -19,16 +22,16 @@ const Register = () => {
         body: JSON.stringify({ username, email, password }),
       });
 
-      const data = await response.json();
       if (response.ok) {
-        alert("Registration successful");
-        navigate("/login"); // Redirigir al login después del registro
+        // Redirect to the login page after successful registration
+        navigate("/login");
       } else {
-        alert(data.error || "Error al registrar usuario");
+        // Handle registration errors
+        const data = await response.json();
+        setError(data.message || "Registration failed. Please try again.");
       }
-    } catch (error) {
-      console.error("Error al registrar usuario:", error);
-      alert("Error al registrar usuario");
+    } catch (err) {
+      setError("An error occurred during registration. Please try again.");
     }
   };
 
@@ -42,19 +45,23 @@ const Register = () => {
             placeholder="👤 Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            required
           />
           <input
             type="email"
             placeholder="📧 Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
           />
           <input
             type="password"
             placeholder="🔒 Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
           />
+          {error && <p className="error-message">{error}</p>}
           <button type="submit">Sign Up</button>
         </form>
         <p className="register-link">
