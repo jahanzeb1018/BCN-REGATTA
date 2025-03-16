@@ -5,14 +5,36 @@ import "./Login.css";
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (username === "admin" && password === "password") {
-      navigate("/map"); // Redirect to the 2D Map page
-    } else {
-      alert("Incorrect username or password");
+
+    try {
+      // Send a POST request to the login endpoint
+      const response = await fetch("https://server-production-c33c.up.railway.app/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Save the JWT token in localStorage
+        localStorage.setItem("token", data.accessToken);
+
+        // Redirect to the map page
+        navigate("/map");
+      } else {
+        // Handle login errors
+        setError(data.message || "Invalid username or password");
+      }
+    } catch (err) {
+      setError("An error occurred during login. Please try again.");
     }
   };
 
@@ -26,13 +48,16 @@ const Login = () => {
             placeholder="👤 Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            required
           />
           <input
             type="password"
             placeholder="🔒 Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
           />
+          {error && <p className="error-message">{error}</p>}
           <button type="submit">Log In</button>
         </form>
         <p className="register-link">
