@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -11,7 +11,6 @@ import MiniMap2D from "./MiniMap2D";
 import "./App.css";
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 
-// Importa los modelos y la textura desde tus assets
 import boatModel from "/src/assets/boat/boat2.glb";
 import buoyModel from "/src/assets/buoy/buoy.glb";
 import barcelonaModel from "/src/assets/barcelona/BCN v10.glb";
@@ -28,13 +27,9 @@ function latLonToWorld(lat, lon) {
   const dLon = lon - LON0;
   const x = dLon * METERS_PER_DEG_LAT * Math.cos(THREE.MathUtils.degToRad(LAT0));
   const z = -dLat * METERS_PER_DEG_LAT;
-  return {
-    x: x * WORLD_SCALE,
-    z: z * WORLD_SCALE,
-  };
+  return { x: x * WORLD_SCALE, z: z * WORLD_SCALE };
 }
 
-// Caches globales para evitar recargas de modelos
 let boatModelCache = null;
 let buoyModelCache = null;
 let barcelonaModelCache = null;
@@ -44,30 +39,36 @@ const Scene = () => {
   const mountRef = useRef(null);
   const navigate = useNavigate();
 
-  // Variables globales de Three.js
-  let camera, scene, renderer, controls, water, sun;
-  let sky; // Referencia al cielo
+  // Ref para la escena y para persistir barcos y boyas
+  const sceneRef = useRef(null);
+  const boatsMapRef = useRef({});
+  const boatsArrayRef = useRef([]);
+  const buoysMapRef = useRef({});
+  const buoysArrayRef = useRef([]);
+
+  // Estados para la reproducción de la carrera (modo Replay)
+  const [raceData, setRaceData] = useState(null);
+  const [raceDuration, setRaceDuration] = useState({ start: 0, end: 0 });
+  const [currentTimeState, setCurrentTimeState] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [playbackMultiplier, setPlaybackMultiplier] = useState(1); // x1 por defecto
+
+  // Variables globales de Three.js (se asignan en init)
+  let camera, renderer, controls, water, sun;
+  let sky;
   const loader = new GLTFLoader();
   const dracoLoader = new DRACOLoader();
   dracoLoader.setDecoderPath("https://www.gstatic.com/draco/v1/decoders/");
   loader.setDRACOLoader(dracoLoader);
 
-  // Diccionarios y arrays para barcos y boyas
-  const boatsMap = {};
-  const boatsArray = [];
-  const buoysMap = {};
-  const buoysArray = [];
-
-  // Variables para autofocus
+  // Variables para el autofocus
   const focusCenter = new THREE.Vector3(0, 0, 0);
   const focusCameraPos = new THREE.Vector3(0, 0, 0);
   let userIsInteracting = false;
   let userInteractionTimeout = null;
 
-  // Parámetros para el GUI
   const parameters = { elevation: 2, azimuth: 180 };
 
-  // Función para actualizar la posición del sol (usada por el GUI)
   function updateSun() {
     const phi = THREE.MathUtils.degToRad(90 - parameters.elevation);
     const theta = THREE.MathUtils.degToRad(parameters.azimuth);
@@ -78,15 +79,17 @@ const Scene = () => {
     }
   }
 
-  // Inicialización de la escena
   function init() {
+    // Crear la escena y guardarla en sceneRef
+    sceneRef.current = new THREE.Scene();
+    const scene = sceneRef.current;
+
     camera = new THREE.PerspectiveCamera(
       55,
       window.innerWidth / window.innerHeight,
       1,
       200000
     );
-
     renderer = new THREE.WebGLRenderer({
       antialias: true,
       powerPreference: "high-performance",
@@ -98,8 +101,6 @@ const Scene = () => {
     renderer.outputEncoding = THREE.sRGBEncoding;
     mountRef.current.appendChild(renderer.domElement);
 
-    scene = new THREE.Scene();
-
     // Posición inicial de la cámara
     const desiredLat = 41.3915063984166;
     const desiredLon = 2.212475285053475;
@@ -108,14 +109,12 @@ const Scene = () => {
 
     sun = new THREE.Vector3();
 
-    // Luces
     const light = new THREE.DirectionalLight(0xffffff, 2);
     light.position.set(-500, 100, 750);
     scene.add(light);
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
-    // Agua
     const waterGeometry = new THREE.PlaneGeometry(19000, 20000);
     water = new Water(waterGeometry, {
       textureWidth: 512,
@@ -133,11 +132,9 @@ const Scene = () => {
     });
     water.rotation.x = -Math.PI / 2;
     water.position.x = 5000;
-    water.position.z = 4000; 
-
+    water.position.z = 4000;
     scene.add(water);
 
-    // Cielo
     sky = new Sky();
     sky.scale.setScalar(10000);
     scene.add(sky);
@@ -146,7 +143,6 @@ const Scene = () => {
     sky.material.uniforms["mieCoefficient"].value = 0.005;
     sky.material.uniforms["mieDirectionalG"].value = 0.8;
 
-    // Actualizar sol y entorno
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     const sceneEnv = new THREE.Scene();
     let renderTarget;
@@ -164,7 +160,6 @@ const Scene = () => {
     }
     updateSunInternal();
 
-    // Controles de cámara
     controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 10, 0);
     controls.update();
@@ -188,26 +183,24 @@ const Scene = () => {
   }
 
   let lastFrameTime = performance.now();
-  let animationId; // para cancelar la animación en el desmontaje
+  let animationId;
   function animate() {
     animationId = requestAnimationFrame(animate);
     const now = performance.now();
     const deltaTime = (now - lastFrameTime) / 1000.0;
     lastFrameTime = now;
 
-    // Actualizar barcos y boyas
-    boatsArray.forEach((boat) => {
+    boatsArrayRef.current.forEach((boat) => {
       boat.update(deltaTime);
     });
-    buoysArray.forEach((buoy) => {
+    buoysArrayRef.current.forEach((buoy) => {
       buoy.update(deltaTime);
     });
 
-    // Ajuste automático de cámara si no hay interacción
     if (!userIsInteracting) {
       const boundingBox = new THREE.Box3();
       let anyBoat = false;
-      boatsArray.forEach((boat) => {
+      boatsArrayRef.current.forEach((boat) => {
         if (boat.boat) {
           boundingBox.expandByPoint(boat.boat.position);
           anyBoat = true;
@@ -241,10 +234,8 @@ const Scene = () => {
     if (water && water.material.uniforms["time"]) {
       water.material.uniforms["time"].value += 1.0 / 60.0;
     }
-    renderer.render(scene, camera);
+    renderer.render(sceneRef.current, camera);
   }
-
-  // Clases para Barco, Boya y Barcelona con cacheo de modelos
 
   class Boat {
     constructor() {
@@ -264,7 +255,7 @@ const Scene = () => {
         clone.position.set(0, 0, 0);
         clone.rotation.y = 0;
         this.boat = clone;
-        scene.add(clone);
+        sceneRef.current.add(clone);
       } else {
         loader.load(boatModel, (gltf) => {
           boatModelCache = gltf;
@@ -273,7 +264,7 @@ const Scene = () => {
           clone.position.set(0, 0, 0);
           clone.rotation.y = 0;
           this.boat = clone;
-          scene.add(clone);
+          sceneRef.current.add(clone);
         });
       }
     }
@@ -325,7 +316,7 @@ const Scene = () => {
         clone.position.set(0, 0, 0);
         clone.rotation.y = 0;
         this.mesh = clone;
-        scene.add(clone);
+        sceneRef.current.add(clone);
       } else {
         loader.load(buoyModel, (gltf) => {
           buoyModelCache = gltf;
@@ -334,7 +325,7 @@ const Scene = () => {
           clone.position.set(0, 0, 0);
           clone.rotation.y = 0;
           this.mesh = clone;
-          scene.add(clone);
+          sceneRef.current.add(clone);
         });
       }
     }
@@ -365,100 +356,102 @@ const Scene = () => {
         clone.scale.set(WORLD_SCALE, WORLD_SCALE, WORLD_SCALE);
         clone.position.set(0, -50, 0);
         clone.rotation.y = 0;
-        scene.add(clone);
+        sceneRef.current.add(clone);
       } else {
         loader.load(barcelonaModel, (gltf) => {
           barcelonaModelCache = gltf;
           gltf.scene.scale.set(WORLD_SCALE, WORLD_SCALE, WORLD_SCALE);
           gltf.scene.position.set(0, -50, 0);
           gltf.scene.rotation.y = 0;
-          scene.add(gltf.scene);
+          sceneRef.current.add(gltf.scene);
         });
       }
     }
     update() {
-      // Si se requiere animar algo de la ciudad
+      // Actualizaciones para la ciudad si se requieren
     }
   }
 
   useEffect(() => {
+    // No retornamos temprano, sino que usamos una variable para almacenar el socket (si se usa)
     init();
-    // Instanciar la ciudad (Barcelona)
     new Barcelona();
-
-    // Conexión al socket
-    const socket = io("https://server-production-c33c.up.railway.app", {
-      query: { role: "viewer" },
-    });
-
-    socket.on("assignBoatInfo", (boatData) => {
-      const { name } = boatData;
-      if (!name) return;
-      if (!boatsMap[name]) {
-        const newBoat = new Boat();
-        boatsMap[name] = newBoat;
-        boatsArray.push(newBoat);
-      }
-    });
-
-    socket.on("updateLocation", (boatInfo) => {
-      const { name } = boatInfo;
-      if (!name) return;
-      if (!boatsMap[name]) {
-        const newBoat = new Boat();
-        boatsMap[name] = newBoat;
-        boatsArray.push(newBoat);
-      }
-      boatsMap[name].setLocation({
-        latitude: boatInfo.latitude,
-        longitude: boatInfo.longitude,
-        azimuth: boatInfo.azimuth,
-        speed: boatInfo.speed,
-        pitch: boatInfo.pitch,
-        roll: boatInfo.roll,
+    const queryParams = new URLSearchParams(location.search);
+    const raceId = queryParams.get("raceId");
+    let socket = null;
+    if (raceId) {
+      fetch(`https://server-production-c33c.up.railway.app/api/races/${raceId}`, {
+        headers: { Authorization: localStorage.getItem("token") },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setRaceData(data);
+          setRaceDuration({ start: data.startTmst, end: data.endTmst });
+          setCurrentTimeState(data.startTmst);
+          if (data.buoys) {
+            data.buoys.forEach((buoy) => {
+              if (!buoysMapRef.current[buoy.id]) {
+                const newBuoy = new Buoy(buoy.lat, buoy.lng, buoy.name);
+                buoysMapRef.current[buoy.id] = newBuoy;
+                buoysArrayRef.current.push(newBuoy);
+              }
+            });
+          }
+        })
+        .catch((err) => console.error(err));
+    } else {
+      socket = io("https://server-production-c33c.up.railway.app", {
+        query: { role: "viewer" },
       });
-    });
-
-    socket.on("boatFinished", (data) => {
-      const { name } = data;
-      removeBoatFromScene(name);
-    });
-
-    socket.on("buoys", (buoysData) => {
-      buoysData.forEach((b) => {
-        if (!buoysMap[b.id]) {
-          const newBuoy = new Buoy(b.lat, b.lng, b.name);
-          buoysMap[b.id] = newBuoy;
-          buoysArray.push(newBuoy);
+      socket.on("assignBoatInfo", (boatData) => {
+        const { name } = boatData;
+        if (!name) return;
+        if (!boatsMapRef.current[name]) {
+          const newBoat = new Boat();
+          boatsMapRef.current[name] = newBoat;
+          boatsArrayRef.current.push(newBoat);
         }
       });
-    });
-
-    function removeBoatFromScene(boatName) {
-      const boatInstance = boatsMap[boatName];
-      if (boatInstance && boatInstance.boat) {
-        scene.remove(boatInstance.boat);
-      }
-      delete boatsMap[boatName];
-      const index = boatsArray.indexOf(boatInstance);
-      if (index !== -1) {
-        boatsArray.splice(index, 1);
-      }
+      socket.on("updateLocation", (boatInfo) => {
+        const { name } = boatInfo;
+        if (!name) return;
+        if (!boatsMapRef.current[name]) {
+          const newBoat = new Boat();
+          boatsMapRef.current[name] = newBoat;
+          boatsArrayRef.current.push(newBoat);
+        }
+        boatsMapRef.current[name].setLocation({
+          latitude: boatInfo.latitude,
+          longitude: boatInfo.longitude,
+          azimuth: boatInfo.azimuth,
+          speed: boatInfo.speed,
+          pitch: boatInfo.pitch,
+          roll: boatInfo.roll,
+        });
+      });
+      socket.on("boatFinished", (data) => {
+        const { name } = data;
+        removeBoatFromScene(name);
+      });
+      socket.on("buoys", (buoysData) => {
+        buoysData.forEach((b) => {
+          if (!buoysMapRef.current[b.id]) {
+            const newBuoy = new Buoy(b.lat, b.lng, b.name);
+            buoysMapRef.current[b.id] = newBuoy;
+            buoysArrayRef.current.push(newBuoy);
+          }
+        });
+      });
     }
-
     animate();
-
     return () => {
-      // Cancelar el bucle de animación
+      if (socket) {
+        socket.disconnect();
+      }
       cancelAnimationFrame(animationId);
-      // Eliminar el event listener de resize
       window.removeEventListener("resize", onWindowResize);
-      // Desconectar controles
       if (controls) controls.dispose();
-      // Desconectar socket
-      socket.disconnect();
-      // Recorrer la escena para disponer de geometrías, materiales y texturas
-      scene.traverse((object) => {
+      sceneRef.current.traverse((object) => {
         if (!object.isMesh) return;
         if (object.geometry) object.geometry.dispose();
         if (object.material) {
@@ -469,15 +462,50 @@ const Scene = () => {
           }
         }
       });
-      // Disponer el renderer y remover el canvas del DOM
       if (mountRef.current && renderer.domElement) {
         mountRef.current.removeChild(renderer.domElement);
       }
       renderer.dispose();
     };
-  }, []);
+  }, [location]);
 
-  // useEffect para crear el GUI solo en "/scene" y destruirlo al salir
+  useEffect(() => {
+    if (!raceData) return;
+    Object.entries(raceData.positions).forEach(([boatName, posArray]) => {
+      const relevantPos = [...posArray].reverse().find((p) => p.t <= currentTimeState);
+      if (relevantPos) {
+        if (!boatsMapRef.current[boatName]) {
+          const newBoat = new Boat();
+          boatsMapRef.current[boatName] = newBoat;
+          boatsArrayRef.current.push(newBoat);
+        }
+        boatsMapRef.current[boatName].setLocation({
+          latitude: relevantPos.a,
+          longitude: relevantPos.n,
+          azimuth: relevantPos.c || 0,
+          speed: relevantPos.s || 0,
+          pitch: relevantPos.pitch || 0,
+          roll: relevantPos.roll || 0,
+        });
+      }
+    });
+  }, [currentTimeState, raceData]);
+
+  useEffect(() => {
+    if (!raceData || !isPlaying) return;
+    const interval = setInterval(() => {
+      setCurrentTimeState((prev) => {
+        const next = prev + playbackMultiplier * 1000;
+        if (next > raceDuration.end) {
+          clearInterval(interval);
+          return raceDuration.end;
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [raceData, isPlaying, playbackMultiplier, raceDuration]);
+
   useEffect(() => {
     let gui;
     if (location.pathname === "/scene" && water) {
@@ -514,8 +542,54 @@ const Scene = () => {
         </button>
       </div>
       <div className="mini-map-container">
-        <MiniMap2D />
+        {raceData ? (
+          <MiniMap2D replayData={raceData} currentTime={currentTimeState} />
+        ) : (
+          <MiniMap2D />
+        )}
       </div>
+      {raceData && (
+        <div
+          className="playback-controls"
+          style={{
+            position: "absolute",
+            bottom: "20px",
+            left: "20px",
+            zIndex: 1000,
+            backgroundColor: "rgba(255,255,255,0.8)",
+            padding: "10px",
+            borderRadius: "8px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+          }}
+        >
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button onClick={() => setIsPlaying(false)}>Pause</button>
+            <button onClick={() => { setIsPlaying(true); setPlaybackMultiplier(1); }}>
+              x1
+            </button>
+            <button onClick={() => { setIsPlaying(true); setPlaybackMultiplier(5); }}>
+              x5
+            </button>
+            <button onClick={() => { setIsPlaying(true); setPlaybackMultiplier(10); }}>
+              x10
+            </button>
+            <button onClick={() => { setIsPlaying(true); setPlaybackMultiplier(20); }}>
+              x20
+            </button>
+          </div>
+          <input
+            type="range"
+            min={raceDuration.start}
+            max={raceDuration.end}
+            step={1000}
+            value={currentTimeState}
+            onChange={(e) => setCurrentTimeState(Number(e.target.value))}
+          />
+          <span>{new Date(currentTimeState).toLocaleTimeString()}</span>
+        </div>
+      )}
     </div>
   );
 };

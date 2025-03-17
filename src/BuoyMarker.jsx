@@ -1,23 +1,16 @@
 // BuoyMarker.jsx
 import React from "react";
-import { Circle, Tooltip } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import { CircleMarker, Tooltip } from "react-leaflet";
 
-const BuoyMarker = ({ lat, lng, name, radius = 50 }) => {
+const BuoyMarker = ({ lat, lng, name, radius = 60 }) => {
   return (
-    <Circle
+    <CircleMarker
       center={[lat, lng]}
-      radius={radius}
-      pathOptions={{
-        color: "yellow",
-        fillColor: "yellow",
-        fillOpacity: 0.4,
-      }}
+      radius={5}
+      pathOptions={{ color: "yellow", fillColor: "yellow" }}
     >
-      <Tooltip direction="top" offset={[0, -10]} opacity={1}>
-        <span>Boya {name}</span>
-      </Tooltip>
-    </Circle>
+      <Tooltip>{name}</Tooltip>
+    </CircleMarker>
   );
 };
 

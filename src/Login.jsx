@@ -28,7 +28,7 @@ const Login = () => {
         localStorage.setItem("token", data.accessToken);
 
         // Redirect to the map page
-        navigate("/map");
+        navigate("/menu");
       } else {
         // Handle login errors
         setError(data.message || "Invalid username or password");
@@ -45,7 +45,7 @@ const Login = () => {
         <form onSubmit={handleLogin} className="login-form">
           <input
             type="text"
-            placeholder="👤 UsernameEEE"
+            placeholder="👤 Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
