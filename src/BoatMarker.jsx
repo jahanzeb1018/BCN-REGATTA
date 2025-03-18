@@ -3,7 +3,7 @@ import React from "react";
 import { Marker, Tooltip } from "react-leaflet";
 import L from "leaflet";
 
-// Crea un ícono en div con rotación e color
+// Función que crea un ícono de barco personalizado con rotación y color
 const createBoatIcon = (color, azimuth, iconSize) => {
   return L.divIcon({
     className: "custom-boat-icon",
@@ -15,6 +15,7 @@ const createBoatIcon = (color, azimuth, iconSize) => {
           height: ${iconSize[1]}px;
           transform: rotate(${azimuth}deg);
           transform-origin: center center;
+          transition: transform 0.3s ease;
         "
       >
         <div

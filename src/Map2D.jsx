@@ -8,15 +8,16 @@ import BuoyMarker from "./BuoyMarker";
 import io from "socket.io-client";
 import "./Map2D.css";
 
-/* Socket para modo Live */
 const socket = io("https://server-production-c33c.up.railway.app/", {
   query: { role: "viewer" },
 });
 
-/* Paleta de colores para asignar automáticamente a cada barco */
+// Paleta de colores para asignar a los barcos
 const colorPalette = ["red", "blue", "yellow", "green", "purple", "cyan", "orange", "lime", "pink"];
-const assignedColors = {}; // Diccionario { boatName: color }
+// Objeto para recordar el color asignado a cada barco
+const assignedColors = {};
 
+// Componente que ajusta la vista del mapa para encuadrar los barcos
 const MapUpdater = ({ boats }) => {
   const map = useMap();
   useEffect(() => {
@@ -31,34 +32,27 @@ const MapUpdater = ({ boats }) => {
 const Map2D = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  // Determinar si estamos en modo Replay o Live
   const queryParams = new URLSearchParams(location.search);
   const raceId = queryParams.get("raceId");
 
-  // Modo Live: barcos y boyas
   const [boats, setBoats] = useState([]);
   const [buoys, setBuoys] = useState([]);
-
-  // Modo Live: chat
   const [showChat, setShowChat] = useState(false);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-
-  // Popup de ayuda (en ambos modos)
   const [showHelp, setShowHelp] = useState(false);
 
-  // Modo Replay: datos de la carrera, tiempo actual, control de reproducción
+  // Datos de la carrera (si se suministra raceId)
   const [race, setRace] = useState(null);
+
+  // Variables para el modo replay (si la carrera finalizó)
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-
-  // Velocidad de reproducción (interval). Por defecto 1 segundo real = 1 segundo de carrera
   const [playbackSpeed, setPlaybackSpeed] = useState(1000);
 
-  /* 1) Efecto principal para cargar datos (o conectar socket) */
+  // 1. Si existe raceId, obtenemos los datos de la carrera (buoys, positions, etc.)
   useEffect(() => {
     if (raceId) {
-      // MODO REPLAY: cargar la carrera
       fetch(`https://server-production-c33c.up.railway.app/api/races/${raceId}`, {
         headers: {
           Authorization: localStorage.getItem("token"),
@@ -66,82 +60,88 @@ const Map2D = () => {
       })
         .then((res) => res.json())
         .then((data) => {
-          console.log("Datos de la carrera:", data);
           setRace(data);
           setBuoys(data.buoys || []);
-          // El tiempo inicial será la hora de inicio de la regata
           if (data.startTmst) {
             setCurrentTime(data.startTmst);
           }
         })
-        .catch((err) => console.error(err));
-    } else {
-      // MODO LIVE: suscribirse a sockets
-      socket.on("updateLocation", (data) => {
-        const now = Date.now();
-        setBoats((prevBoats) => {
-          const boatIndex = prevBoats.findIndex((b) => b.id === data.id);
-          if (boatIndex !== -1) {
-            prevBoats[boatIndex] = {
-              ...prevBoats[boatIndex],
-              position: [data.latitude, data.longitude],
-              azimuth: data.azimuth,
-              lastUpdate: now,
-            };
-          } else {
-            prevBoats.push({
-              id: data.id,
-              name: data.name,
-              position: [data.latitude, data.longitude],
-              speed: data.speed,
-              color: data.color || "blue",
-              azimuth: data.azimuth,
-              lastUpdate: now,
-            });
-          }
-          return [...prevBoats];
-        });
-      });
-
-      socket.on("buoys", (buoysData) => {
-        setBuoys(buoysData);
-      });
-
-      socket.on("disconnect", () => {
-        console.warn("Socket desconectado");
-      });
+        .catch(console.error);
     }
+  }, [raceId]);
+
+  // 2. Suscribirse a los eventos del socket para actualización de ubicación y boyas.
+  useEffect(() => {
+    const handleUpdateLocation = (data) => {
+      console.log("Update location received:", data); // Depuración
+      if (raceId && data.raceId !== raceId) return; // Filtra por raceId
+
+      setBoats((prev) => {
+        const idx = prev.findIndex((b) => b.id === data.id);
+        if (idx !== -1) {
+          // Actualizar barco existente
+          prev[idx] = {
+            ...prev[idx],
+            position: [data.latitude, data.longitude],
+            azimuth: data.azimuth,
+            speed: data.speed,
+            lastUpdate: Date.now(),
+          };
+        } else {
+          // Asignar color si no existe
+          if (!assignedColors[data.name]) {
+            assignedColors[data.name] = colorPalette.shift() || "gray";
+          }
+          // Agregar nuevo barco
+          prev.push({
+            id: data.id,
+            name: data.name,
+            position: [data.latitude, data.longitude],
+            speed: data.speed,
+            color: assignedColors[data.name],
+            azimuth: data.azimuth,
+            lastUpdate: Date.now(),
+          });
+        }
+        return [...prev];
+      });
+    };
+
+    const handleBuoys = (data) => {
+      setBuoys(data);
+    };
+
+    socket.on("updateLocation", handleUpdateLocation);
+    socket.on("buoys", handleBuoys);
 
     return () => {
-      if (!raceId) {
-        socket.off("updateLocation");
-        socket.off("buoys");
-        socket.off("disconnect");
-      }
+      socket.off("updateLocation", handleUpdateLocation);
+      socket.off("buoys", handleBuoys);
     };
   }, [raceId]);
 
-  /* 2) Modo Live: limpiar barcos inactivos */
+  // 3. Si la carrera está en curso (no finalizada) o no hay raceId, limpiar barcos inactivos.
   useEffect(() => {
-    if (!raceId) {
+    const isRealTime = !race || !race.endTmst;
+    if (isRealTime) {
       const interval = setInterval(() => {
         const now = Date.now();
         setBoats((prevBoats) =>
-          prevBoats.filter((boat) => now - boat.lastUpdate <= 10000)
+          prevBoats.filter((boat) => now - (boat.lastUpdate || 0) <= 10000)
         );
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [raceId]);
+  }, [race]);
 
-  /* 3) Modo Replay: avanzar tiempo automáticamente según playbackSpeed */
+  // 4. Modo replay: si la carrera finalizó, reproducir posiciones según currentTime.
   useEffect(() => {
-    if (!raceId || !race) return;
+    if (!race || !race.endTmst) return;
     let intervalId;
     if (isPlaying && race.startTmst && race.endTmst) {
       intervalId = setInterval(() => {
         setCurrentTime((prev) => {
-          const next = prev + 1000; // Avanzamos 1s en la carrera
+          const next = prev + 1000;
           if (next > race.endTmst) {
             clearInterval(intervalId);
             return race.endTmst;
@@ -151,16 +151,14 @@ const Map2D = () => {
       }, playbackSpeed);
     }
     return () => clearInterval(intervalId);
-  }, [isPlaying, raceId, race, playbackSpeed]);
+  }, [isPlaying, race, playbackSpeed]);
 
-  /* 4) Modo Replay: calcular boatPositions en cada render, según currentTime */
+  // 5. Calcular las posiciones de replay a partir de race.positions.
   let replayBoatPositions = [];
-  if (raceId && race && race.positions) {
+  if (race && race.endTmst && race.positions) {
     Object.entries(race.positions).forEach(([boatName, posArray]) => {
-      // Buscar la última posición cuyo timestamp <= currentTime
       const relevantPos = [...posArray].reverse().find((p) => p.t <= currentTime);
       if (relevantPos) {
-        // Asignar color si no está ya
         if (!assignedColors[boatName]) {
           assignedColors[boatName] = colorPalette.shift() || "gray";
         }
@@ -176,7 +174,12 @@ const Map2D = () => {
     });
   }
 
-  /* 5) Función para enviar mensajes de chat (modo Live) */
+  // 6. Mostrar marcadores solo si se suministra un raceId:
+  // Si no se proporcionó raceId, se muestra un mapa vacío.
+  const isRaceFinished = race && race.endTmst;
+  const finalBoatMarkers = raceId ? (isRaceFinished ? replayBoatPositions : boats) : [];
+
+  // --- Chat simple (solo visible si no hay raceId) ---
   const handleSendMessage = () => {
     if (newMessage.trim()) {
       setMessages([...messages, { text: newMessage, sender: "You" }]);
@@ -184,33 +187,19 @@ const Map2D = () => {
     }
   };
 
-  /* 6) Render final: en modo Replay => replayBoatPositions; en modo Live => boats */
-  const finalBoatMarkers = raceId ? replayBoatPositions : boats;
-
   return (
     <div className="map">
-      <MapContainer
-        center={[41.3851, 2.1734]}
-        zoom={13}
-        style={{ width: "100%", height: "100vh" }}
-      >
+      <MapContainer center={[41.3851, 2.1734]} zoom={13} style={{ width: "100%", height: "100vh" }}>
         <TileLayer
           url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
           attribution="&copy; Google Maps"
         />
         <MapUpdater boats={finalBoatMarkers} />
 
-        {/* Boyas */}
         {buoys.map((buoy) => (
-          <BuoyMarker
-            key={buoy.id}
-            lat={buoy.lat}
-            lng={buoy.lng}
-            name={buoy.name}
-          />
+          <BuoyMarker key={buoy.id} lat={buoy.lat} lng={buoy.lng} name={buoy.name} />
         ))}
 
-        {/* Barcos */}
         {finalBoatMarkers.map((boat, i) => (
           <BoatMarker
             key={i}
@@ -223,7 +212,6 @@ const Map2D = () => {
         ))}
       </MapContainer>
 
-      {/* Botones de control comunes */}
       <button className="control-btn logout-btn" onClick={() => navigate("/")}>
         🚪 Logout
       </button>
@@ -234,25 +222,19 @@ const Map2D = () => {
         🌐 3D
       </button>
 
-      {/* Modo Live: Chat */}
       {!raceId && (
-        <button
-          className="control-btn chat-btn"
-          onClick={() => setShowChat(!showChat)}
-        >
+        <button className="control-btn chat-btn" onClick={() => setShowChat(!showChat)}>
           💬 Chat
         </button>
       )}
 
-      {/* Modo Replay: Controles (slider, botones de velocidad, mostrar hora) */}
-      {raceId && race && race.startTmst && race.endTmst && (
+      {raceId && isRaceFinished && race.startTmst && race.endTmst && (
         <div className="playback-controls">
-          {/* Botones de velocidad / pausa */}
           <button onClick={() => setIsPlaying(false)}>Pause</button>
           <button
             onClick={() => {
               setIsPlaying(true);
-              setPlaybackSpeed(1000); // 1x => 1 seg real avanza 1 seg de carrera
+              setPlaybackSpeed(1000);
             }}
           >
             x1
@@ -260,7 +242,7 @@ const Map2D = () => {
           <button
             onClick={() => {
               setIsPlaying(true);
-              setPlaybackSpeed(500); // 2x => 1 seg real avanza 2 seg de carrera
+              setPlaybackSpeed(500);
             }}
           >
             x2
@@ -268,13 +250,12 @@ const Map2D = () => {
           <button
             onClick={() => {
               setIsPlaying(true);
-              setPlaybackSpeed(200); // 5x => 1 seg real avanza 5 seg de carrera
+              setPlaybackSpeed(200);
             }}
           >
             x5
           </button>
 
-          {/* Slider para saltar manualmente */}
           <input
             type="range"
             min={race.startTmst}
@@ -284,14 +265,12 @@ const Map2D = () => {
             onChange={(e) => setCurrentTime(Number(e.target.value))}
           />
 
-          {/* Hora actual de la regata */}
           <span className="time-display">
             {new Date(currentTime).toLocaleTimeString()}
           </span>
         </div>
       )}
 
-      {/* Popup de ayuda */}
       {showHelp && (
         <div className="help-popup">
           <div className="help-popup-content">
@@ -300,9 +279,7 @@ const Map2D = () => {
             <ul>
               <li>Use the 2D Map to track real-time location or replay old races.</li>
               <li>Switch to 3D View for an immersive experience.</li>
-              {!raceId && (
-                <li>Use the Chat to communicate with other users in real time.</li>
-              )}
+              {!raceId && <li>Use the Chat to communicate with other users in real time.</li>}
               <li>Click on a ship marker to see details.</li>
             </ul>
             <button className="close-help-btn" onClick={() => setShowHelp(false)}>
@@ -312,7 +289,6 @@ const Map2D = () => {
         </div>
       )}
 
-      {/* Chat emergente (modo Live) */}
       {!raceId && showChat && (
         <div className="chat-popup">
           <div className="chat-header">
@@ -325,9 +301,7 @@ const Map2D = () => {
             {messages.map((msg, index) => (
               <div
                 key={index}
-                className={`chat-message ${
-                  msg.sender === "You" ? "sent" : "received"
-                }`}
+                className={`chat-message ${msg.sender === "You" ? "sent" : "received"}`}
               >
                 <strong>{msg.sender}: </strong>
                 {msg.text}

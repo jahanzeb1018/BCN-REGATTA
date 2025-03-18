@@ -19,10 +19,12 @@ const Menu = () => {
   };
 
   const handleLogout = () => {
-    // Eliminar el token del localStorage
     localStorage.removeItem("token");
-    // Redirigir a la pantalla de login
     navigate("/login");
+  };
+
+  const handleCreateCompetition = () => {
+    navigate("/create-competition");
   };
 
   return (
@@ -43,9 +45,12 @@ const Menu = () => {
           <h3>🌐 3D View</h3>
           <p>Experience an immersive three-dimensional environment</p>
         </div>
+        <div className="menu-card" onClick={handleCreateCompetition}>
+          <h3>🆕 Crear Competición</h3>
+          <p>Create a new competition for mobile tracking</p>
+        </div>
       </div>
 
-      {/* Botón de Logout */}
       <button className="logout-btn" onClick={handleLogout}>
         Logout
       </button>
