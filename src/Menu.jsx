@@ -27,6 +27,10 @@ const Menu = () => {
     navigate("/create-competition");
   };
 
+  const handleAddRace = () => {
+    navigate("/add-race");
+  };
+
   return (
     <div className="menu-container">
       <h2 className="menu-title">⛵ Control Center</h2>
@@ -48,6 +52,10 @@ const Menu = () => {
         <div className="menu-card" onClick={handleCreateCompetition}>
           <h3>🆕 Crear Competición</h3>
           <p>Create a new competition for mobile tracking</p>
+        </div>
+        <div className="menu-card" onClick={handleAddRace}>
+          <h3>🆕 Añadir Carrera</h3>
+          <p>Sube un archivo JSON de una carrera finalizada</p>
         </div>
       </div>
 

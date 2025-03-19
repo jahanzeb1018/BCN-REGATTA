@@ -10,6 +10,7 @@ import { io } from "socket.io-client";
 import MiniMap2D from "./MiniMap2D";
 import "./App.css";
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
+import SunCalc from "suncalc";
 
 import boatModel from "/src/assets/boat/boat2.glb";
 import buoyModel from "/src/assets/buoy/buoy.glb";
@@ -30,46 +31,51 @@ function latLonToWorld(lat, lon) {
   return { x: x * WORLD_SCALE, z: z * WORLD_SCALE };
 }
 
+// Caches de modelos
 let boatModelCache = null;
 let buoyModelCache = null;
 let barcelonaModelCache = null;
 
+// Parámetros del sol
+const parameters = { elevation: 2, azimuth: 180 };
+
 const Scene = () => {
   const location = useLocation();
-  const mountRef = useRef(null);
   const navigate = useNavigate();
+  const mountRef = useRef(null);
 
-  // Ref para la escena y para persistir barcos y boyas
+  // Estados
+  const [showHelp, setShowHelp] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [raceData, setRaceData] = useState(null);
+  const [raceDuration, setRaceDuration] = useState({ start: 0, end: 0 });
+  const [currentTimeState, setCurrentTimeState] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [playbackMultiplier, setPlaybackMultiplier] = useState(1);
+
+  // Refs de escena
   const sceneRef = useRef(null);
   const boatsMapRef = useRef({});
   const boatsArrayRef = useRef([]);
   const buoysMapRef = useRef({});
   const buoysArrayRef = useRef([]);
 
-  // Estados para la reproducción de la carrera (modo Replay)
-  const [raceData, setRaceData] = useState(null);
-  const [raceDuration, setRaceDuration] = useState({ start: 0, end: 0 });
-  const [currentTimeState, setCurrentTimeState] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [playbackMultiplier, setPlaybackMultiplier] = useState(1); // x1 por defecto
-
-  // Variables globales de Three.js (se asignan en init)
-  let camera, renderer, controls, water, sun;
-  let sky;
+  // Variables globales
+  let camera, renderer, controls, water, sky, sun;
   const loader = new GLTFLoader();
   const dracoLoader = new DRACOLoader();
   dracoLoader.setDecoderPath("https://www.gstatic.com/draco/v1/decoders/");
   loader.setDRACOLoader(dracoLoader);
 
-  // Variables para el autofocus
+  // Autofocus
   const focusCenter = new THREE.Vector3(0, 0, 0);
   const focusCameraPos = new THREE.Vector3(0, 0, 0);
   let userIsInteracting = false;
   let userInteractionTimeout = null;
 
-  const parameters = { elevation: 2, azimuth: 180 };
-
+  // Función para actualizar la posición del sol
   function updateSun() {
+    if (!sun) return;
     const phi = THREE.MathUtils.degToRad(90 - parameters.elevation);
     const theta = THREE.MathUtils.degToRad(parameters.azimuth);
     sun.setFromSphericalCoords(1, phi, theta);
@@ -80,7 +86,6 @@ const Scene = () => {
   }
 
   function init() {
-    // Crear la escena y guardarla en sceneRef
     sceneRef.current = new THREE.Scene();
     const scene = sceneRef.current;
 
@@ -90,6 +95,7 @@ const Scene = () => {
       1,
       200000
     );
+
     renderer = new THREE.WebGLRenderer({
       antialias: true,
       powerPreference: "high-performance",
@@ -97,11 +103,10 @@ const Scene = () => {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 0.7;
     renderer.outputEncoding = THREE.sRGBEncoding;
     mountRef.current.appendChild(renderer.domElement);
 
-    // Posición inicial de la cámara
     const desiredLat = 41.3915063984166;
     const desiredLon = 2.212475285053475;
     const { x: camX, z: camZ } = latLonToWorld(desiredLat, desiredLon);
@@ -109,10 +114,10 @@ const Scene = () => {
 
     sun = new THREE.Vector3();
 
-    const light = new THREE.DirectionalLight(0xffffff, 2);
+    const light = new THREE.DirectionalLight(0xffffff, 1);
     light.position.set(-500, 100, 750);
     scene.add(light);
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
     scene.add(ambientLight);
 
     const waterGeometry = new THREE.PlaneGeometry(19000, 20000);
@@ -138,10 +143,11 @@ const Scene = () => {
     sky = new Sky();
     sky.scale.setScalar(10000);
     scene.add(sky);
-    sky.material.uniforms["turbidity"].value = 10;
-    sky.material.uniforms["rayleigh"].value = 2;
-    sky.material.uniforms["mieCoefficient"].value = 0.005;
-    sky.material.uniforms["mieDirectionalG"].value = 0.8;
+
+    sky.material.uniforms["turbidity"].value = 3;
+    sky.material.uniforms["rayleigh"].value = 1.0;
+    sky.material.uniforms["mieCoefficient"].value = 0.004;
+    sky.material.uniforms["mieDirectionalG"].value = 0.7;
 
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     const sceneEnv = new THREE.Scene();
@@ -190,13 +196,27 @@ const Scene = () => {
     const deltaTime = (now - lastFrameTime) / 1000.0;
     lastFrameTime = now;
 
-    boatsArrayRef.current.forEach((boat) => {
-      boat.update(deltaTime);
-    });
-    buoysArrayRef.current.forEach((buoy) => {
-      buoy.update(deltaTime);
-    });
+    boatsArrayRef.current.forEach((boat) => boat.update(deltaTime));
+    buoysArrayRef.current.forEach((buoy) => buoy.update(deltaTime));
 
+    // Actualiza la posición del sol de forma recurrente
+    if (raceData) {
+      // Si tus timestamps están en hora local, ajustamos a UTC
+      const offsetMinutes = new Date().getTimezoneOffset();
+      const offsetMs = offsetMinutes * 60 * 1000;
+      const utcTimestamp = currentTimeState + offsetMs;
+      const dateUtc = new Date(utcTimestamp);
+      const { lat, lon } = computeCenterLocation();
+      const sunPos = SunCalc.getPosition(dateUtc, lat, lon);
+      const sunElevation = THREE.MathUtils.radToDeg(sunPos.altitude);
+      let computedAzimuth = (THREE.MathUtils.radToDeg(sunPos.azimuth) + 180) % 360;
+      if (computedAzimuth > 180) computedAzimuth -= 360;
+      parameters.elevation = sunElevation;
+      parameters.azimuth = computedAzimuth;
+      updateSun();
+    }
+
+    // Autofocus
     if (!userIsInteracting) {
       const boundingBox = new THREE.Box3();
       let anyBoat = false;
@@ -237,16 +257,44 @@ const Scene = () => {
     renderer.render(sceneRef.current, camera);
   }
 
+  // Función para calcular el centro de la carrera
+  function computeCenterLocation() {
+    if (raceData && raceData.positions) {
+      let sumLat = 0,
+        sumLon = 0,
+        count = 0;
+      Object.values(raceData.positions).forEach((boatPositions) => {
+        if (Array.isArray(boatPositions) && boatPositions.length > 0) {
+          const pos = boatPositions[boatPositions.length - 1];
+          sumLat += pos.a;
+          sumLon += pos.n;
+          count++;
+        }
+      });
+      if (count > 0) return { lat: sumLat / count, lon: sumLon / count };
+    }
+    return { lat: LAT0, lon: LON0 };
+  }
+
+  // --- Clases ---
+
+  // Clase Boat con interpolación suave entre posiciones
   class Boat {
     constructor() {
-      this.boat = null;
+      // Inicializamos posición actual y target con el mismo valor
       this.lat = LAT0;
       this.lon = LON0;
       this.azimuth = 0;
       this.speed = 0;
       this.pitch = 0;
       this.roll = 0;
-      this.smoothness = 0.01;
+      this.targetLat = LAT0;
+      this.targetLon = LON0;
+      this.targetAzimuth = 0;
+      this.targetSpeed = 0;
+      this.targetPitch = 0;
+      this.targetRoll = 0;
+      this.smoothness = 0.01; // para altura del agua (no se interpola)
       this.balanceAmplitude = 0.07;
       this.balanceFrequency = 0.001;
       if (boatModelCache) {
@@ -268,16 +316,30 @@ const Scene = () => {
         });
       }
     }
+
+    // Al recibir nuevos datos, actualizamos los valores target
     setLocation({ latitude, longitude, azimuth, speed, pitch, roll }) {
-      this.lat = latitude;
-      this.lon = longitude;
-      this.azimuth = azimuth || 0;
-      this.speed = speed || 0;
-      this.pitch = pitch || 0;
-      this.roll = roll || 0;
+      this.targetLat = latitude;
+      this.targetLon = longitude;
+      this.targetAzimuth = azimuth || 0;
+      this.targetSpeed = speed || 0;
+      this.targetPitch = pitch || 0;
+      this.targetRoll = roll || 0;
     }
+
+    // En update se interpola la posición y orientación actual hacia los valores target
     update(deltaTime) {
       if (!this.boat) return;
+      const lerpFactor = deltaTime * 0.5; // Ajusta este valor para suavizar más o menos
+
+      // Interpolar posición y parámetros
+      this.lat = THREE.MathUtils.lerp(this.lat, this.targetLat, lerpFactor);
+      this.lon = THREE.MathUtils.lerp(this.lon, this.targetLon, lerpFactor);
+      this.azimuth = THREE.MathUtils.lerp(this.azimuth, this.targetAzimuth, lerpFactor);
+      this.speed = THREE.MathUtils.lerp(this.speed, this.targetSpeed, lerpFactor);
+      this.pitch = THREE.MathUtils.lerp(this.pitch, this.targetPitch, lerpFactor);
+      this.roll = THREE.MathUtils.lerp(this.roll, this.targetRoll, lerpFactor);
+
       const { x, z } = latLonToWorld(this.lat, this.lon);
       const waterHeight = this.getWaterHeight(x, z);
       const currentY = this.boat.position.y;
@@ -285,8 +347,12 @@ const Scene = () => {
       this.boat.position.y += (targetY - currentY) * this.smoothness;
       this.boat.position.x = x;
       this.boat.position.z = z;
-      const rotationY = THREE.MathUtils.degToRad(360 - this.azimuth);
+
+      // Corregir orientación: sumar offset de -90°
+      const headingCorrection = -90;
+      const rotationY = THREE.MathUtils.degToRad(360 - this.azimuth + headingCorrection);
       this.boat.rotation.y = rotationY;
+
       const time = Date.now();
       this.boat.rotation.z =
         this.roll + Math.sin(time * this.balanceFrequency) * this.balanceAmplitude;
@@ -296,6 +362,7 @@ const Scene = () => {
           this.balanceAmplitude *
           0.5;
     }
+
     getWaterHeight(x, z) {
       return Math.sin(x * 0.1 + Date.now() * 0.005) * 2;
     }
@@ -373,7 +440,6 @@ const Scene = () => {
   }
 
   useEffect(() => {
-    // No retornamos temprano, sino que usamos una variable para almacenar el socket (si se usa)
     init();
     new Barcelona();
     const queryParams = new URLSearchParams(location.search);
@@ -506,33 +572,15 @@ const Scene = () => {
     return () => clearInterval(interval);
   }, [raceData, isPlaying, playbackMultiplier, raceDuration]);
 
-  useEffect(() => {
-    let gui;
-    if (location.pathname === "/scene" && water) {
-      gui = new GUI();
-      const folderSky = gui.addFolder("Sky");
-      folderSky
-        .add(parameters, "elevation", 0, 90, 0.1)
-        .onChange(() => updateSun());
-      folderSky
-        .add(parameters, "azimuth", -180, 180, 0.1)
-        .onChange(() => updateSun());
-      folderSky.open();
-
-      const waterUniforms = water.material.uniforms;
-      const folderWater = gui.addFolder("Water");
-      folderWater
-        .add(waterUniforms.distortionScale, "value", 0, 8, 0.1)
-        .name("distortionScale");
-      folderWater
-        .add(waterUniforms.size, "value", 0.1, 10, 0.1)
-        .name("size");
-      folderWater.open();
+  function removeBoatFromScene(boatName) {
+    if (!boatsMapRef.current[boatName]) return;
+    const boat = boatsMapRef.current[boatName];
+    if (boat.boat && sceneRef.current) {
+      sceneRef.current.remove(boat.boat);
     }
-    return () => {
-      if (gui) gui.destroy();
-    };
-  }, [location.pathname, water]);
+    delete boatsMapRef.current[boatName];
+    boatsArrayRef.current = boatsArrayRef.current.filter((b) => b !== boat);
+  }
 
   return (
     <div ref={mountRef} id="scene-container">
@@ -587,7 +635,71 @@ const Scene = () => {
             value={currentTimeState}
             onChange={(e) => setCurrentTimeState(Number(e.target.value))}
           />
-          <span>{new Date(currentTimeState).toLocaleTimeString()}</span>
+          <span className="time-display">
+            {new Date(currentTimeState).toLocaleTimeString()}
+          </span>
+        </div>
+      )}
+
+      <button className="control-btn logout-btn" onClick={() => navigate("/")}>
+        🚪 Logout
+      </button>
+      <button className="control-btn help-btn" onClick={() => setShowHelp(true)}>
+        ❓ Help
+      </button>
+      <button className="control-btn threeD-btn" onClick={() => navigate("/scene")}>
+        🌐 3D
+      </button>
+
+      {!raceData && (
+        <button className="control-btn chat-btn" onClick={() => setShowChat(!showChat)}>
+          💬 Chat
+        </button>
+      )}
+
+      {showHelp && (
+        <div className="help-popup">
+          <div className="help-popup-content">
+            <h2>Help Information</h2>
+            <p>Welcome to the Smart Navigation platform! Some tips:</p>
+            <ul>
+              <li>Use the 2D Map to track real-time location or replay old races.</li>
+              <li>Switch to 3D View for an immersive experience.</li>
+              {!raceData && <li>Use the Chat to communicate with other users in real time.</li>}
+              <li>Click on a ship marker to see details.</li>
+            </ul>
+            <button className="close-help-btn" onClick={() => setShowHelp(false)}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!raceData && showChat && (
+        <div className="chat-popup">
+          <div className="chat-header">
+            <h3>💬 Chat</h3>
+            <button className="close-chat-btn" onClick={() => setShowChat(false)}>
+              ×
+            </button>
+          </div>
+          <div className="chat-box">
+            <div className="chat-message sent">
+              <strong>You: </strong>Hola
+            </div>
+            <div className="chat-message received">
+              <strong>Other: </strong>Hola, ¿qué tal?
+            </div>
+          </div>
+          <div className="chat-input">
+            <input
+              type="text"
+              placeholder="Type a message..."
+              value=""
+              onChange={() => {}}
+            />
+            <button onClick={() => {}}>Send</button>
+          </div>
         </div>
       )}
     </div>
