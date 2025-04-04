@@ -1,8 +1,10 @@
+// MiniMap2D.jsx
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import BoatMarker from "./BoatMarker";
 import BuoyMarker from "./BuoyMarker";
+import BoatTrail from "./BoatTrail";
 import "./MiniMap2D.css";
 import { io } from "socket.io-client";
 
@@ -32,27 +34,30 @@ const MiniMap2D = ({ replayData, currentTime }) => {
   // Ref para almacenar los colores asignados a cada barco de forma persistente
   const assignedColorsRef = useRef({});
 
-  // Si se reciben datos de replay, calcular posiciones a partir de replayData.positions
+  // Modo replay: calcular posiciones y estela a partir de replayData.positions
   useEffect(() => {
     if (replayData && currentTime) {
       const boatsFromReplay = [];
       Object.entries(replayData.positions || {}).forEach(([boatName, posArray]) => {
-        // Buscar la última posición cuyo timestamp sea menor o igual al currentTime
-        const relevantPos = [...posArray].reverse().find((p) => p.t <= currentTime);
-        if (relevantPos) {
-          // Si aún no se le ha asignado un color a este barco, se asigna uno disponible
+        const trailPoints = posArray
+          .filter((p) => p.t <= currentTime)
+          .map((p) => ({ pos: [p.a, p.n], t: p.t, c: p.c, s: p.s }));
+        if (trailPoints.length > 0) {
           if (!assignedColorsRef.current[boatName]) {
             const usedColors = Object.values(assignedColorsRef.current);
-            const availableColor = availableColors.find((c) => !usedColors.includes(c)) || "gray";
+            const availableColor =
+              availableColors.find((c) => !usedColors.includes(c)) || "gray";
             assignedColorsRef.current[boatName] = availableColor;
           }
+          const lastPoint = trailPoints[trailPoints.length - 1];
           boatsFromReplay.push({
             id: boatName,
             name: boatName,
-            position: [relevantPos.a, relevantPos.n],
-            speed: relevantPos.s || 0,
+            position: lastPoint.pos,
+            speed: lastPoint.s || 0,
             color: assignedColorsRef.current[boatName],
-            azimuth: relevantPos.c || 0,
+            azimuth: lastPoint.c || 0,
+            trail: trailPoints,
           });
         }
       });
@@ -61,7 +66,7 @@ const MiniMap2D = ({ replayData, currentTime }) => {
     }
   }, [replayData, currentTime, availableColors]);
 
-  // Si no se reciben datos de replay, funciona en modo live con socket
+  // Modo live: conexión por socket y actualización de la estela
   useEffect(() => {
     if (!replayData) {
       const socket = io("https://server-production-c33c.up.railway.app/", {
@@ -70,14 +75,17 @@ const MiniMap2D = ({ replayData, currentTime }) => {
       socket.on("updateLocation", (data) => {
         setBoats((prevBoats) => {
           const now = Date.now();
+          const newPoint = { pos: [data.latitude, data.longitude], t: now };
           const boatIndex = prevBoats.findIndex((boat) => boat.id === data.id);
           if (boatIndex !== -1) {
-            prevBoats[boatIndex] = {
-              ...prevBoats[boatIndex],
-              position: [data.latitude, data.longitude],
-              azimuth: data.azimuth,
-              lastUpdate: now,
-            };
+            const updatedBoat = { ...prevBoats[boatIndex] };
+            updatedBoat.position = [data.latitude, data.longitude];
+            updatedBoat.azimuth = data.azimuth;
+            updatedBoat.lastUpdate = now;
+            let newTrail = updatedBoat.trail ? [...updatedBoat.trail, newPoint] : [newPoint];
+            newTrail = newTrail.filter((pt) => now - pt.t <= 15 * 60 * 1000);
+            updatedBoat.trail = newTrail;
+            prevBoats[boatIndex] = updatedBoat;
           } else {
             prevBoats.push({
               id: data.id,
@@ -87,6 +95,7 @@ const MiniMap2D = ({ replayData, currentTime }) => {
               color: data.color,
               azimuth: data.azimuth,
               lastUpdate: now,
+              trail: [{ pos: [data.latitude, data.longitude], t: now }],
             });
           }
           return [...prevBoats];
@@ -101,7 +110,7 @@ const MiniMap2D = ({ replayData, currentTime }) => {
     }
   }, [replayData]);
 
-  // Solo en modo live, se eliminan barcos inactivos
+  // Modo live: eliminar barcos inactivos
   useEffect(() => {
     if (!replayData) {
       const interval = setInterval(() => {
@@ -128,15 +137,23 @@ const MiniMap2D = ({ replayData, currentTime }) => {
           />
           <MapUpdater boats={boats} />
           {boats.map((boat) => (
-            <BoatMarker
-              key={boat.id}
-              position={boat.position}
-              name={boat.name}
-              speed={boat.speed}
-              color={boat.color}
-              azimuth={boat.azimuth}
-              iconSize={[10, 20]}
-            />
+            <React.Fragment key={boat.id}>
+              <BoatMarker
+                position={boat.position}
+                name={boat.name}
+                speed={boat.speed}
+                color={boat.color}
+                azimuth={boat.azimuth}
+                iconSize={[10, 20]}
+              />
+              {boat.trail && boat.trail.length > 1 && (
+                <BoatTrail
+                  trail={boat.trail}
+                  color={boat.color}
+                  currentTime={replayData ? currentTime : Date.now()}
+                />
+              )}
+            </React.Fragment>
           ))}
           {buoys.map((buoy) => (
             <BuoyMarker

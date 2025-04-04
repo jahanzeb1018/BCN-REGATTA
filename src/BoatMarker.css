@@ -1,0 +1,16 @@
+/* BoatMarker.css */
+.boat-icon-container {
+    position: relative;
+  }
+  
+  .progress-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: rotate(-90deg);
+  }
+  
+  .progress-ring-circle {
+    transition: stroke-dashoffset 0.5s ease;
+  }
+  

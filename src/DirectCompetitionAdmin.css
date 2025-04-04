@@ -1,0 +1,185 @@
+/* Contenedor principal */
+.admin-container {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #f0f4ff, #e6e9f2);
+    min-height: 100vh;
+    color: #333;
+  }
+  
+  /* Banner (estilo Old Recordings) */
+  .old-recordings-banner {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    margin-bottom: 2rem;
+  }
+  
+  .banner-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    justify-content: flex-start;
+  }
+  
+  .back-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #6a11cb;
+    transition: transform 0.3s ease;
+  }
+  
+  .back-btn:hover {
+    transform: translateY(-3px);
+  }
+  
+  .old-recordings-banner h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #6a11cb;
+  }
+  
+  /* Loading overlay (igual que en Old Recordings) */
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(240, 244, 255, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
+  
+  .loading-spinner {
+    text-align: center;
+  }
+  
+  .spinner {
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #6a11cb;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Contenido principal */
+  .admin-main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    text-align: center;
+  }
+  
+  .admin-message {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: #28a745;
+  }
+  
+  /* Lista de competiciones */
+  .competition-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    justify-content: center;
+  }
+  
+  .competition-card {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 1.8rem;
+    width: 300px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+  }
+  
+  .competition-card:hover {
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+  }
+  
+  .competition-card h3 {
+    margin-bottom: 0.8rem;
+    font-size: 1.2rem;
+    color: #333;
+  }
+  
+  .competition-card p {
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    color: #666;
+  }
+  
+  /* Marcas para competiciones activas e inactivas */
+  .competition-card.active {
+    border: 2px solid #28a745;
+  }
+  
+  .competition-card.inactive {
+    opacity: 0.8;
+  }
+  
+  /* Indicador activo */
+  .active-indicator {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  
+  .active-indicator span {
+    background: #28a745;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+  
+  /* Botones: Se eliminó la transformación en hover para evitar el efecto borroso */
+  .competition-card button {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 25px;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.3s ease;
+  }
+  
+  .competition-card button:hover {
+    background: linear-gradient(135deg, #2575fc, #6a11cb);
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .banner-content h1 {
+      font-size: 2rem;
+    }
+    .competition-list {
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+  }
+  

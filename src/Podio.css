@@ -1,0 +1,55 @@
+/* Podio.css */
+.podio-container {
+    position: absolute;
+    top: 10px; /* Debajo del botón "volver atrás" (80px) con algo de margen */
+    right: 5px;
+    max-width: 250px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: opacity 0.3s ease;
+  }
+  
+  .podio-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.2rem;
+    border-bottom: 2px solid #ececec;
+    padding-bottom: 0.3rem;
+    text-align: center;
+  }
+  
+  .podio-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .podio-item {
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .podio-item:last-child {
+    border-bottom: none;
+  }
+  
+  .podio-rank {
+    font-weight: bold;
+    margin-right: 0.5rem;
+    font-size: 1rem;
+  }
+  
+  .podio-boat {
+    font-size: 0.95rem;
+    color: #333;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  

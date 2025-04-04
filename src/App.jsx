@@ -13,6 +13,7 @@ import RaceReplay3D from "./RaceReplay3D"; // NUEVO COMPONENTE
 import ProtectedRoute from "./ProtectedRoute"; // Ruta protegida
 import CreateCompetition from "./CreateCompetition";
 import AddRace from "./AddRace";
+import DirectCompetitionAdmin from "./DirectCompetitionAdmin";
 
 const App = () => {
   return (
@@ -31,6 +32,7 @@ const App = () => {
       <Route path="/old-records" element={<ProtectedRoute><OldRecordings /></ProtectedRoute>} />
       <Route path="/old-records/:id" element={<ProtectedRoute><RaceReplay2D /></ProtectedRoute>} />
       <Route path="/old-records/:id/3d" element={<ProtectedRoute><RaceReplay3D /></ProtectedRoute>} />
+      <Route path="/direct-competition-admin" element={<ProtectedRoute><DirectCompetitionAdmin /></ProtectedRoute>} />
 
       {/* Menú */}
       <Route path="/menu" element={<ProtectedRoute><Menu /></ProtectedRoute>} />

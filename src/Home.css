@@ -1,392 +1,543 @@
 /* Estilos generales del contenedor */
 .home-container {
-    width: 100vw;
-    min-height: 100vh;
-    background: linear-gradient(135deg, #f0f4ff, #e6e9f2);
-    color: #333;
-    font-family: Arial, sans-serif;
-    overflow-x: hidden;
-  }
-  
-  /* Banner Superior */
+  /* Se elimina el min-height para que el contenedor se adapte al contenido */
+  /* min-height: 100vh; */
+  /* No se usa overflow-x: hidden; aquí, ya que no se quiere forzar scroll interno */
+  width: 100%;
+  background: linear-gradient(135deg, #f0f4ff, #e6e9f2);
+  color: #333;
+  font-family: Arial, sans-serif;
+  /* Se quitan propiedades que puedan generar scroll interno */
+}
+
+/* Banner Superior */
+.home-banner {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 5;
+}
+
+.banner-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.banner-content h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #6a11cb;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Botones Login / Register (para invitados) */
+.auth-btn {
+  padding: 0.8rem 1.5rem;
+  border: 2px solid #6a11cb;
+  border-radius: 25px;
+  color: #6a11cb;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.auth-btn:hover {
+  background: #6a11cb;
+  color: white;
+}
+
+/* Contenedor Principal */
+.home-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Sección de Introducción */
+.intro-section {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.intro-section h2 {
+  font-size: 2.2rem;
+  color: #6a11cb;
+  margin-bottom: 1.5rem;
+}
+
+.intro-text {
+  font-size: 1.2rem;
+  line-height: 1.8;
+  color: #555;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Sección del Mapa 2D / 3D */
+.map-section {
+  margin-bottom: 4rem;
+}
+
+.map-content {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.map-content.reverse {
+  flex-direction: row-reverse;
+}
+
+.map-text {
+  flex: 1;
+}
+
+.map-text h3 {
+  font-size: 2rem;
+  color: #6a11cb;
+  margin-bottom: 1.5rem;
+}
+
+.map-text p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #555;
+}
+
+.map-image {
+  flex: 1;
+  text-align: center;
+}
+
+.map-image img {
+  max-width: 100%;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Sección de la Finalidad del Proyecto */
+.purpose-section {
+  background: linear-gradient(135deg, #6a11cb, #2575fc);
+  padding: 4rem 2rem;
+  margin-bottom: 4rem;
+  color: white;
+  text-align: center;
+}
+
+.purpose-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.purpose-section h3 {
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.purpose-text {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  max-width: 800px;
+  margin: 0 auto 2rem auto;
+}
+
+.purpose-cards {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.purpose-card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2rem;
+  border-radius: 15px;
+  width: 300px;
+  transition: transform 0.3s ease, background 0.3s ease;
+  box-sizing: border-box;
+}
+
+.purpose-card:hover {
+  transform: translateY(-10px);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.purpose-icon {
+  width: 60px;
+  height: 60px;
+  margin-bottom: 1rem;
+}
+
+.purpose-card h4 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.purpose-card p {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #e0e0e0;
+}
+
+/* Sección de Características */
+.features-section {
+  margin-bottom: 4rem;
+}
+
+.features-section h3 {
+  font-size: 2rem;
+  color: #6a11cb;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.feature-cards {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.feature-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  width: 300px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.feature-icon {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 1.5rem;
+}
+
+/* Sección de Tecnologías */
+.tech-section {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.tech-section h3 {
+  font-size: 2rem;
+  color: #6a11cb;
+  margin-bottom: 2rem;
+}
+
+.tech-icons {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+.tech-icon {
+  width: 60px;
+  height: 60px;
+  transition: transform 0.3s ease;
+}
+
+.tech-icon:hover {
+  transform: scale(1.2);
+}
+
+/* Llamado a la Acción */
+.cta-section {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.cta-section h3 {
+  font-size: 2rem;
+  color: #6a11cb;
+  margin-bottom: 1.5rem;
+}
+
+.cta-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.cta-btn {
+  padding: 1rem 2.5rem;
+  border: none;
+  border-radius: 25px;
+  background: linear-gradient(135deg, #6a11cb, #2575fc);
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+
+.cta-btn:hover {
+  background: linear-gradient(135deg, #2575fc, #6a11cb);
+}
+
+/* =========================
+   MEDIA QUERIES para pantallas móviles
+========================= */
+@media (max-width: 768px) {
   .home-banner {
-    background: rgba(255, 255, 255, 0.9);
-    padding: 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 1rem;
   }
-  
-  .banner-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  
+
   .banner-content h1 {
-    margin: 0;
-    font-size: 2.5rem;
-    font-weight: bold;
-    color: #6a11cb;
+    font-size: 2rem;
   }
-  
-  .auth-buttons {
-    display: flex;
-    gap: 1rem;
-  }
-  
+
   .auth-btn {
-    padding: 0.8rem 1.5rem;
-    border: 2px solid #6a11cb;
-    border-radius: 25px;
-    color: #6a11cb;
-    text-decoration: none;
-    font-weight: bold;
-    transition: background 0.3s ease, color 0.3s ease;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
   }
-  
-  .auth-btn:hover {
-    background: #6a11cb;
-    color: white;
-  }
-  
-  /* Contenido Principal */
-  .home-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-  }
-  
-  /* Sección de Introducción */
-  .intro-section {
-    text-align: center;
-    margin-bottom: 4rem;
-  }
-  
+
   .intro-section h2 {
-    font-size: 2.2rem;
-    color: #6a11cb;
-    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
   }
   
   .intro-text {
-    font-size: 1.2rem;
-    line-height: 1.8;
-    color: #555;
-    max-width: 800px;
-    margin: 0 auto;
-  }
-  
-  /* Sección del Mapa 2D */
-  .map-section {
-    margin-bottom: 4rem;
-  }
-  
-  .map-content {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-  }
-  
-  .map-content.reverse {
-    flex-direction: row-reverse;
-  }
-  
-  .map-text {
-    flex: 1;
-  }
-  
-  .map-text h3 {
-    font-size: 2rem;
-    color: #6a11cb;
-    margin-bottom: 1.5rem;
-  }
-  
-  .map-text p {
-    font-size: 1.1rem;
-    line-height: 1.8;
-    color: #555;
-  }
-  
-  .map-image {
-    flex: 1;
-    text-align: center;
-  }
-  
-  .map-image img {
-    max-width: 100%;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Sección de la Finalidad del Proyecto (Diseño Original) */
-  .purpose-section {
-    background: linear-gradient(135deg, #6a11cb, #2575fc);
-    padding: 4rem 2rem;
-    margin-bottom: 4rem;
-    color: white;
-    text-align: center;
-  }
-  
-  .purpose-content {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  
-  .purpose-section h3 {
-    font-size: 2.5rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  .purpose-text {
-    font-size: 1.1rem;
-    line-height: 1.8;
-    max-width: 800px;
-    margin: 0 auto 2rem auto;
-  }
-  
-  .purpose-cards {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    flex-wrap: wrap;
-  }
-  
-  .purpose-card {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 2rem;
-    border-radius: 15px;
-    width: 300px;
-    transition: transform 0.3s ease, background 0.3s ease;
-  }
-  
-  .purpose-card:hover {
-    transform: translateY(-10px);
-    background: rgba(255, 255, 255, 0.2);
-  }
-  
-  .purpose-icon {
-    width: 60px;
-    height: 60px;
-    margin-bottom: 1rem;
-  }
-  
-  .purpose-card h4 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-  }
-  
-  .purpose-card p {
     font-size: 1rem;
-    line-height: 1.6;
-    color: #e0e0e0;
   }
-  
-  /* Sección de Características */
-  .features-section {
-    margin-bottom: 4rem;
+
+  .map-content {
+    flex-direction: column;
+    gap: 1rem;
   }
-  
+
+  .map-text h3 {
+    font-size: 1.5rem;
+  }
+
+  .map-text p {
+    font-size: 1rem;
+  }
+
+  .purpose-section {
+    padding: 2rem 1rem;
+  }
+
+  .purpose-section h3 {
+    font-size: 1.8rem;
+  }
+
+  .purpose-text {
+    font-size: 1rem;
+  }
+
+  .purpose-cards {
+    gap: 1rem;
+  }
+
+  .purpose-card {
+    width: 100%;
+    margin: 0 auto;
+  }
+
   .features-section h3 {
-    font-size: 2rem;
-    color: #6a11cb;
-    text-align: center;
-    margin-bottom: 2rem;
+    font-size: 1.5rem;
   }
-  
-  .feature-cards {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    flex-wrap: wrap;
-  }
-  
+
   .feature-card {
-    background: white;
-    padding: 2rem;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    width: 300px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    width: 100%;
+    padding: 1.5rem;
   }
-  
-  .feature-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-  }
-  
-  .feature-icon {
-    width: 80px;
-    height: 80px;
-    margin-bottom: 1.5rem;
-  }
-  
-  /* Sección de Tecnologías */
-  .tech-section {
-    text-align: center;
-    margin-bottom: 4rem;
-  }
-  
+
   .tech-section h3 {
-    font-size: 2rem;
-    color: #6a11cb;
-    margin-bottom: 2rem;
+    font-size: 1.5rem;
   }
-  
+
   .tech-icons {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    margin-top: 1.5rem;
+    gap: 1rem;
   }
-  
+
   .tech-icon {
-    width: 60px;
-    height: 60px;
-    transition: transform 0.3s ease;
+    width: 50px;
+    height: 50px;
   }
-  
-  .tech-icon:hover {
-    transform: scale(1.2);
-  }
-  
-  /* Llamado a la Acción */
-  .cta-section {
-    text-align: center;
-    margin-bottom: 4rem;
-  }
-  
+
   .cta-section h3 {
-    font-size: 2rem;
-    color: #6a11cb;
-    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
   }
-  
+
   .cta-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 1.5rem;
-    margin-top: 1.5rem;
+    flex-direction: column;
+    gap: 1rem;
   }
-  
+
   .cta-btn {
-    padding: 1rem 2.5rem;
-    border: none;
-    border-radius: 25px;
-    background: linear-gradient(135deg, #6a11cb, #2575fc);
-    color: white;
-    text-decoration: none;
-    font-weight: bold;
-    transition: background 0.3s ease;
+    padding: 0.8rem 1.5rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-banner {
+    padding: 0.8rem;
+  }
+
+  .banner-content h1 {
+    font-size: 1.8rem;
+  }
+
+  .auth-btn {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.8rem;
+  }
+
+  .intro-section h2 {
+    font-size: 1.6rem;
   }
   
-  .cta-btn:hover {
-    background: linear-gradient(135deg, #2575fc, #6a11cb);
+  .intro-text {
+    font-size: 0.9rem;
   }
-  
-  /* Media Queries para pantallas móviles */
-  @media (max-width: 768px) {
-    /* Ajustar el banner superior */
-    .home-banner {
-      padding: 1rem;
-    }
-  
-    .banner-content h1 {
-      font-size: 2rem;
-    }
-  
-    .auth-btn {
-      padding: 0.6rem 1rem;
-      font-size: 0.9rem;
-    }
-  
-    /* Ajustar la sección de introducción */
-    .intro-section h2 {
-      font-size: 1.8rem;
-    }
-  
-    .intro-text {
-      font-size: 1rem;
-    }
-  
-    /* Ajustar la sección del mapa 2D y 3D */
-    .map-content {
-      flex-direction: column;
-      gap: 1rem;
-    }
-  
-    .map-text h3 {
-      font-size: 1.5rem;
-    }
-  
-    .map-text p {
-      font-size: 1rem;
-    }
-  
-    /* Ajustar la sección de la finalidad del proyecto */
-    .purpose-section {
-      padding: 2rem 1rem;
-    }
-  
-    .purpose-section h3 {
-      font-size: 1.8rem;
-    }
-  
-    .purpose-text {
-      font-size: 1rem;
-    }
-  
-    .purpose-cards {
-      flex-direction: column;
-      gap: 1rem;
-    }
-  
-    .purpose-card {
-      width: 100%;
-      padding: 1.5rem;
-    }
-  
-    /* Ajustar la sección de características */
-    .features-section h3 {
-      font-size: 1.5rem;
-    }
-  
-    .feature-card {
-      width: 100%;
-      padding: 1.5rem;
-    }
-  
-    /* Ajustar la sección de tecnologías */
-    .tech-section h3 {
-      font-size: 1.5rem;
-    }
-  
-    .tech-icons {
-      gap: 1rem;
-    }
-  
-    .tech-icon {
-      width: 50px;
-      height: 50px;
-    }
-  
-    /* Ajustar el llamado a la acción */
-    .cta-section h3 {
-      font-size: 1.5rem;
-    }
-  
-    .cta-buttons {
-      flex-direction: column;
-      gap: 1rem;
-    }
-  
-    .cta-btn {
-      padding: 0.8rem 1.5rem;
-      font-size: 0.9rem;
-    }
+
+  .map-text h3 {
+    font-size: 1.3rem;
   }
+
+  .map-text p {
+    font-size: 0.9rem;
+  }
+
+  .purpose-section h3 {
+    font-size: 1.6rem;
+  }
+
+  .purpose-text {
+    font-size: 0.9rem;
+  }
+
+  .cta-section h3 {
+    font-size: 1.6rem;
+  }
+
+  .cta-btn {
+    padding: 0.7rem 1.2rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* DEMO SECTION */
+.demo-section {
+  margin-top: 3rem;
+  text-align: center;
+}
+
+.demo-description {
+  max-width: 700px;
+  margin: 0.5rem auto 2rem auto;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #555;
+}
+
+.demo-map-container,
+.demo-scene-container {
+  width: 100%;
+  max-width: 600px;
+  height: 400px;
+  margin: 0 auto 2rem auto;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  border-radius: 10px;
+  /* Se mantiene overflow hidden para recortar contenido extra sin scroll interno */
+  overflow: hidden;
+}
+
+/* Ajustes para pantallas más pequeñas */
+@media (max-width: 768px) {
+  .demo-map-container,
+  .demo-scene-container {
+    height: 300px;
+  }
+}
+@media (max-width: 480px) {
+  .demo-map-container,
+  .demo-scene-container {
+    height: 250px;
+  }
+}
+
+/* Controles de la demo (replay) */
+.demo-controls {
+  margin: 1rem auto 2rem auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 10px;
+  max-width: 620px;
+}
+
+.play-pause-btn {
+  font-size: 1.4rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  transition: transform 0.2s;
+}
+
+.play-pause-btn:hover {
+  transform: scale(1.1);
+}
+
+.speed-btn {
+  font-size: 1rem;
+  background: none;
+  border: 1px solid #fff;
+  border-radius: 5px;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: #fff;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.speed-btn:hover {
+  background-color: #007bff;
+  transform: scale(1.05);
+}
+
+.time-slider {
+  width: 150px;
+  cursor: pointer;
+}
+
+.time-display {
+  font-weight: bold;
+  min-width: 60px;
+  text-align: center;
+}
+
+/* Título del 3D */
+.demo-3d-title {
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+  color: #6a11cb;
+}

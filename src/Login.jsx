@@ -1,6 +1,8 @@
+// Login.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./Login.css";
+import backgroundLogin from "/src/assets/background_login2.jpg";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -12,25 +14,20 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      // Send a POST request to the login endpoint
       const response = await fetch("https://server-production-c33c.up.railway.app/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Save the JWT token in localStorage
         localStorage.setItem("token", data.accessToken);
-
-        // Redirect to the map page
+        localStorage.setItem("role", data.role);
+        // Redirigir a la página del menú
         navigate("/menu");
       } else {
-        // Handle login errors
         setError(data.message || "Invalid username or password");
       }
     } catch (err) {
@@ -39,7 +36,14 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
+    <div
+      className="login-container"
+      style={{
+        background: `url(${backgroundLogin}) center center / cover no-repeat`,
+      }}
+    >
+      <div className="login-overlay"></div>
+
       <div className="auth-form-container">
         <h2>🚀 Log In</h2>
         <form onSubmit={handleLogin} className="login-form">
@@ -61,7 +65,7 @@ const Login = () => {
           <button type="submit">Log In</button>
         </form>
         <p className="register-link">
-          Don't have an account? <Link to="/register">Sign up here</Link>
+          Don’t have an account? <Link to="/register">Sign up here</Link>
         </p>
       </div>
     </div>

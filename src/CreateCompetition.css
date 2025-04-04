@@ -1,50 +1,262 @@
-/* CreateCompetition.css */
-.create-competition-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    background: #0d1b3d;
-    color: #eef;
-    font-family: "Roboto", sans-serif;
-    padding: 2rem;
-    text-align: center;
+/* Página principal */
+.create-competition-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f0f4ff, #e6e9f2);
+  font-family: "Roboto", sans-serif;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Banner superior */
+.cc-banner {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  padding: 1.2rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.cc-banner-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cc-back-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.6rem;
+  cursor: pointer;
+  color: #6a11cb;
+  transition: transform 0.3s ease;
+}
+
+.cc-back-btn:hover {
+  transform: translateY(-2px);
+}
+
+.cc-banner h1 {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #6a11cb;
+  margin: 0;
+}
+
+/* Contenedor principal */
+.cc-container {
+  width: 100%;
+  max-width: 800px; /* Un poco más ancho para evitar solapamientos */
+  margin: 2rem auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 0 1rem;
+}
+
+/* Tarjetas (cards) */
+.cc-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Tarjeta de resultado */
+.cc-card-result {
+  animation: fadeInUp 0.5s forwards;
+}
+
+.cc-card-buoys {
+  animation: fadeInUp 0.5s forwards;
+}
+
+/* Animación para cards */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
   }
-  
-  .create-competition-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    width: 300px;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  
-  .create-competition-form input {
-    padding: 0.8rem;
-    border-radius: 8px;
-    border: none;
-    font-size: 1rem;
+}
+
+/* Títulos y subtítulos */
+.cc-title {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #6a11cb;
+}
+
+.cc-subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #666;
+}
+
+/* Formulario principal */
+.cc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cc-form input {
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.cc-form input:focus {
+  border-color: #6a11cb;
+  outline: none;
+}
+
+/* Botones primarios y secundarios */
+.cc-btn-primary,
+.cc-btn-secondary,
+.cc-btn-danger {
+  padding: 0.7rem 1.2rem;
+  border: none;
+  border-radius: 25px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s;
+  align-self: flex-start;
+}
+
+/* Botón primario */
+.cc-btn-primary {
+  background: linear-gradient(135deg, #6a11cb, #2575fc);
+  color: #fff;
+}
+
+.cc-btn-primary:hover {
+  background: linear-gradient(135deg, #2575fc, #6a11cb);
+  transform: translateY(-2px);
+}
+
+/* Botón secundario */
+.cc-btn-secondary {
+  background: #eee;
+  color: #333;
+}
+
+.cc-btn-secondary:hover {
+  background: #ddd;
+  transform: translateY(-2px);
+}
+
+/* Botón de peligro (Quitar) */
+.cc-btn-danger {
+  background: #ff6b6b;
+  color: #fff;
+}
+
+.cc-btn-danger:hover {
+  background: #e63946;
+  transform: translateY(-2px);
+}
+
+/* Mensajes */
+.cc-error {
+  color: #ff6b6b;
+  font-size: 0.95rem;
+}
+
+.cc-success {
+  color: #28a745;
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+/* ID Container */
+.cc-id-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.cc-id-container label {
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+.cc-id-container input {
+  flex: 1;
+  min-width: 160px;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
+
+.cc-id-container input:hover {
+  border-color: #6a11cb;
+}
+
+/* Sección Boyas */
+.cc-buoy-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.cc-buoy-row input[type="text"] {
+  flex: 1;
+  min-width: 100px;
+}
+
+.cc-coord-group {
+  display: flex;
+  gap: 0.5rem;
+  flex: 2;
+  min-width: 180px;
+}
+
+.cc-coord-group input {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+  transition: border-color 0.3s ease;
+}
+
+.cc-coord-group input:focus {
+  border-color: #6a11cb;
+  outline: none;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .cc-container {
+    max-width: 95%;
   }
-  
-  .create-competition-form button {
-    padding: 0.8rem;
-    border-radius: 8px;
-    border: none;
-    background: linear-gradient(135deg, #6a11cb, #2575fc);
-    color: white;
-    font-size: 1rem;
-    cursor: pointer;
+  .cc-card {
+    padding: 1rem 1.2rem;
   }
-  
-  .create-competition-form button:hover {
-    background: linear-gradient(135deg, #2575fc, #6a11cb);
+  .cc-form input {
+    font-size: 0.9rem;
   }
-  
-  .error-message {
-    color: #ff6b6b;
+  .cc-title {
+    font-size: 1.15rem;
   }
-  
-  .competition-result {
-    margin-top: 1.5rem;
+  .cc-banner h1 {
+    font-size: 1.5rem;
   }
-  
+}

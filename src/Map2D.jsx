@@ -1,10 +1,13 @@
 // Map2D.jsx
 import React, { useEffect, useState } from "react";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, useMap, Polyline, CircleMarker } from "react-leaflet";
 import { useNavigate, useLocation } from "react-router-dom";
 import "leaflet/dist/leaflet.css";
 import BoatMarker from "./BoatMarker";
 import BuoyMarker from "./BuoyMarker";
+import BoatTrail from "./BoatTrail";
+import Podio from "./Podio";
+import NextBuoyArrow from "./NextBuoyArrow"; // Asegúrate de tener este componente
 import io from "socket.io-client";
 import "./Map2D.css";
 
@@ -12,12 +15,9 @@ const socket = io("https://server-production-c33c.up.railway.app/", {
   query: { role: "viewer" },
 });
 
-// Paleta de colores para asignar a los barcos
 const colorPalette = ["red", "blue", "yellow", "green", "purple", "cyan", "orange", "lime", "pink"];
-// Objeto para recordar el color asignado a cada barco
 const assignedColors = {};
 
-// Componente que ajusta la vista del mapa para encuadrar los barcos
 const MapUpdater = ({ boats }) => {
   const map = useMap();
   useEffect(() => {
@@ -29,70 +29,140 @@ const MapUpdater = ({ boats }) => {
   return null;
 };
 
+// Función para calcular la distancia entre dos puntos (fórmula Haversine)
+const computeDistance = (lat1, lon1, lat2, lon2) => {
+  const toRad = (value) => (value * Math.PI) / 180;
+  const R = 6371e3;
+  const φ1 = toRad(lat1);
+  const φ2 = toRad(lat2);
+  const Δφ = toRad(lat2 - lat1);
+  const Δλ = toRad(lon2 - lon1);
+  const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+/**
+ * Función que detecta en qué segmento (fase) se encuentra el barco
+ * y devuelve un objeto con la fase, la fracción de avance (t de 0 a 1) y el progreso acumulado.
+ */
+const getBoatSegmentProgress = (boatPos, buoys) => {
+  if (!buoys || buoys.length === 0) return null;
+  const cumDistances = [0];
+  for (let i = 1; i < buoys.length; i++) {
+    cumDistances[i] = cumDistances[i - 1] + computeDistance(buoys[i - 1].lat, buoys[i - 1].lng, buoys[i].lat, buoys[i].lng);
+  }
+  let best = null;
+  for (let i = 0; i < buoys.length; i++) {
+    const j = (i + 1) % buoys.length;
+    const A = { lat: buoys[i].lat, lng: buoys[i].lng };
+    const B = { lat: buoys[j].lat, lng: buoys[j].lng };
+    const segmentLength = computeDistance(A.lat, A.lng, B.lat, B.lng);
+    const ABx = B.lat - A.lat;
+    const ABy = B.lng - A.lng;
+    const APx = boatPos[0] - A.lat;
+    const APy = boatPos[1] - A.lng;
+    const ab2 = ABx * ABx + ABy * ABy;
+    if (ab2 === 0) continue;
+    const dot = ABx * APx + ABy * APy;
+    const t = dot / ab2;
+    if (t >= 0 && t <= 1) {
+      const projLat = A.lat + t * ABx;
+      const projLng = A.lng + t * ABy;
+      const perpDist = computeDistance(boatPos[0], boatPos[1], projLat, projLng);
+      const progress = (i < cumDistances.length ? cumDistances[i] : 0) + t * segmentLength;
+      if (best === null || perpDist < best.perp) {
+        best = { phase: i, t, perp: perpDist, progress };
+      }
+    }
+  }
+  return best;
+};
+
+/**
+ * Calcula el recorrido total (suma de tramos, incluido el tramo final circular)
+ */
+const computeTotalCourse = (buoys) => {
+  if (!buoys || buoys.length === 0) return 0;
+  let total = 0;
+  for (let i = 1; i < buoys.length; i++) {
+    total += computeDistance(buoys[i - 1].lat, buoys[i - 1].lng, buoys[i].lat, buoys[i].lng);
+  }
+  total += computeDistance(buoys[buoys.length - 1].lat, buoys[buoys.length - 1].lng, buoys[0].lat, buoys[0].lng);
+  return total;
+};
+
 const Map2D = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const raceId = queryParams.get("raceId");
+  const raceIdParam = queryParams.get("raceId");
+
+  const [activeRaceId, setActiveRaceId] = useState(null);
+  const effectiveRaceId = raceIdParam || activeRaceId;
 
   const [boats, setBoats] = useState([]);
   const [buoys, setBuoys] = useState([]);
   const [showChat, setShowChat] = useState(false);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  const [showHelp, setShowHelp] = useState(false);
-
-  // Datos de la carrera (si se suministra raceId)
   const [race, setRace] = useState(null);
-
-  // Variables para el modo replay (si la carrera finalizó)
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const speedOptions = [1, 2, 5];
+  const [speedIndex, setSpeedIndex] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1000);
 
-  // 1. Si existe raceId, obtenemos los datos de la carrera (buoys, positions, etc.)
+  // Cargar la carrera
   useEffect(() => {
-    if (raceId) {
-      fetch(`https://server-production-c33c.up.railway.app/api/races/${raceId}`, {
-        headers: {
-          Authorization: localStorage.getItem("token"),
-        },
+    if (effectiveRaceId) {
+      fetch(`https://server-production-c33c.up.railway.app/api/races/${effectiveRaceId}`, {
+        headers: { Authorization: localStorage.getItem("token") },
       })
         .then((res) => res.json())
         .then((data) => {
           setRace(data);
           setBuoys(data.buoys || []);
-          if (data.startTmst) {
-            setCurrentTime(data.startTmst);
-          }
+          if (data.startTmst) setCurrentTime(data.startTmst);
         })
         .catch(console.error);
     }
-  }, [raceId]);
+  }, [effectiveRaceId]);
 
-  // 2. Suscribirse a los eventos del socket para actualización de ubicación y boyas.
+  // Buscar competición activa
+  useEffect(() => {
+    if (!raceIdParam) {
+      fetch("https://server-production-c33c.up.railway.app/api/active-competition", {
+        headers: { Authorization: localStorage.getItem("token") },
+      })
+        .then((res) => (res.ok ? res.json() : Promise.reject("No active competition")))
+        .then((data) => setActiveRaceId(data._id))
+        .catch(console.error);
+    }
+  }, [raceIdParam]);
+
+  // Actualizar barcos y boyas vía socket
   useEffect(() => {
     const handleUpdateLocation = (data) => {
-      console.log("Update location received:", data); // Depuración
-      if (raceId && data.raceId !== raceId) return; // Filtra por raceId
-
+      if (effectiveRaceId && data.raceId !== effectiveRaceId) return;
       setBoats((prev) => {
+        const now = Date.now();
+        const newPoint = { pos: [data.latitude, data.longitude], t: now };
         const idx = prev.findIndex((b) => b.id === data.id);
         if (idx !== -1) {
-          // Actualizar barco existente
-          prev[idx] = {
-            ...prev[idx],
-            position: [data.latitude, data.longitude],
-            azimuth: data.azimuth,
-            speed: data.speed,
-            lastUpdate: Date.now(),
-          };
+          const updatedBoat = { ...prev[idx] };
+          updatedBoat.position = [data.latitude, data.longitude];
+          updatedBoat.azimuth = data.azimuth;
+          updatedBoat.speed = data.speed;
+          updatedBoat.lastUpdate = now;
+          let newTrail = updatedBoat.trail ? [...updatedBoat.trail, newPoint] : [newPoint];
+          newTrail = newTrail.filter((pt) => now - pt.t <= 10 * 60 * 1000);
+          updatedBoat.trail = newTrail;
+          prev[idx] = updatedBoat;
         } else {
-          // Asignar color si no existe
           if (!assignedColors[data.name]) {
             assignedColors[data.name] = colorPalette.shift() || "gray";
           }
-          // Agregar nuevo barco
           prev.push({
             id: data.id,
             name: data.name,
@@ -100,7 +170,8 @@ const Map2D = () => {
             speed: data.speed,
             color: assignedColors[data.name],
             azimuth: data.azimuth,
-            lastUpdate: Date.now(),
+            lastUpdate: now,
+            trail: [{ pos: [data.latitude, data.longitude], t: now }],
           });
         }
         return [...prev];
@@ -113,28 +184,25 @@ const Map2D = () => {
 
     socket.on("updateLocation", handleUpdateLocation);
     socket.on("buoys", handleBuoys);
-
     return () => {
       socket.off("updateLocation", handleUpdateLocation);
       socket.off("buoys", handleBuoys);
     };
-  }, [raceId]);
+  }, [effectiveRaceId]);
 
-  // 3. Si la carrera está en curso (no finalizada) o no hay raceId, limpiar barcos inactivos.
+  // Limpiar barcos inactivos
   useEffect(() => {
     const isRealTime = !race || !race.endTmst;
     if (isRealTime) {
       const interval = setInterval(() => {
         const now = Date.now();
-        setBoats((prevBoats) =>
-          prevBoats.filter((boat) => now - (boat.lastUpdate || 0) <= 10000)
-        );
+        setBoats((prevBoats) => prevBoats.filter((boat) => now - (boat.lastUpdate || 0) <= 10000));
       }, 1000);
       return () => clearInterval(interval);
     }
   }, [race]);
 
-  // 4. Modo replay: si la carrera finalizó, reproducir posiciones según currentTime.
+  // Modo replay
   useEffect(() => {
     if (!race || !race.endTmst) return;
     let intervalId;
@@ -153,33 +221,99 @@ const Map2D = () => {
     return () => clearInterval(intervalId);
   }, [isPlaying, race, playbackSpeed]);
 
-  // 5. Calcular las posiciones de replay a partir de race.positions.
+  // Extraer posiciones en replay
   let replayBoatPositions = [];
   if (race && race.endTmst && race.positions) {
     Object.entries(race.positions).forEach(([boatName, posArray]) => {
-      const relevantPos = [...posArray].reverse().find((p) => p.t <= currentTime);
-      if (relevantPos) {
+      const trailPoints = posArray
+        .filter((p) => p.t <= currentTime)
+        .map((p) => ({ pos: [p.a, p.n], t: p.t, c: p.c, s: p.s }));
+      if (trailPoints.length > 0) {
         if (!assignedColors[boatName]) {
           assignedColors[boatName] = colorPalette.shift() || "gray";
         }
+        const lastPoint = trailPoints[trailPoints.length - 1];
         replayBoatPositions.push({
           id: boatName,
           name: boatName,
-          position: [relevantPos.a, relevantPos.n],
-          azimuth: relevantPos.c || 0,
-          speed: relevantPos.s || 0,
+          position: lastPoint.pos,
+          azimuth: lastPoint.c || 0,
+          speed: lastPoint.s || 0,
           color: assignedColors[boatName],
+          trail: trailPoints,
         });
       }
     });
   }
 
-  // 6. Mostrar marcadores solo si se suministra un raceId:
-  // Si no se proporcionó raceId, se muestra un mapa vacío.
   const isRaceFinished = race && race.endTmst;
-  const finalBoatMarkers = raceId ? (isRaceFinished ? replayBoatPositions : boats) : [];
+  const finalBoatMarkers = effectiveRaceId
+    ? isRaceFinished
+      ? replayBoatPositions
+      : boats
+    : [];
 
-  // --- Chat simple (solo visible si no hay raceId) ---
+  // Cálculo del podio usando getBoatSegmentProgress
+  const rankedBoats = [...finalBoatMarkers].sort((a, b) => {
+    if (buoys.length > 0) {
+      const segA = getBoatSegmentProgress(a.position, buoys);
+      const segB = getBoatSegmentProgress(b.position, buoys);
+      const progressA = segA ? segA.progress : 0;
+      const progressB = segB ? segB.progress : 0;
+      return progressB - progressA;
+    } else {
+      return 0;
+    }
+  });
+
+  // Determinar la boya siguiente a la que debe dirigirse el líder
+  let nextBuoyIndex = null;
+  if (buoys.length > 0 && rankedBoats.length > 0) {
+    const leaderSeg = getBoatSegmentProgress(rankedBoats[0].position, buoys);
+    if (leaderSeg) nextBuoyIndex = (leaderSeg.phase + 1) % buoys.length;
+  }
+
+  // Calcular el recorrido total (tramos + tramo final circular)
+  const totalCourse = computeTotalCourse(buoys);
+
+  // Para el líder, determinar la boya siguiente
+  let leaderNextBuoy = null;
+  if (buoys.length > 0 && rankedBoats.length > 0) {
+    const leaderSeg = getBoatSegmentProgress(rankedBoats[0].position, buoys);
+    if (leaderSeg) {
+      const nextIndex = (leaderSeg.phase + 1) % buoys.length;
+      leaderNextBuoy = buoys[nextIndex];
+    }
+  }
+
+  const buoyLinePositions = buoys.map((b) => [b.lat, b.lng]);
+  if (buoys.length > 1) buoyLinePositions.push([buoys[0].lat, buoys[0].lng]);
+
+  // --- INNOVATIVO: LeaderHalo ---
+  // Agregar un halo alrededor del barco líder para resaltar su ventaja.
+  let leaderHalo = null;
+  if (rankedBoats.length > 0) {
+    const leader = rankedBoats[0];
+    let leadMargin = 0;
+    if (rankedBoats.length > 1) {
+      const segLeader = getBoatSegmentProgress(leader.position, buoys);
+      const segSecond = getBoatSegmentProgress(rankedBoats[1].position, buoys);
+      const progressLeader = segLeader ? segLeader.progress : 0;
+      const progressSecond = segSecond ? segSecond.progress : 0;
+      leadMargin = progressLeader - progressSecond;
+    }
+    // Mapear el margen a un incremento en radio (ajusta la constante según necesites)
+    const extraRadius = Math.min(Math.max(leadMargin / 50, 5), 20);
+    leaderHalo = (
+      <CircleMarker
+        center={leader.position}
+        radius={15 + extraRadius}
+        pathOptions={{ color: "gold", fillColor: "gold", fillOpacity: 0.3, weight: 0 }}
+      />
+    );
+  }
+  // --- FIN LeaderHalo ---
+
   const handleSendMessage = () => {
     if (newMessage.trim()) {
       setMessages([...messages, { text: newMessage, sender: "You" }]);
@@ -187,75 +321,148 @@ const Map2D = () => {
     }
   };
 
+  const handleCycleSpeed = () => {
+    const newIndex = (speedIndex + 1) % speedOptions.length;
+    setSpeedIndex(newIndex);
+    const val = speedOptions[newIndex];
+    if (val === 1) setPlaybackSpeed(1000);
+    if (val === 2) setPlaybackSpeed(500);
+    if (val === 5) setPlaybackSpeed(200);
+  };
+
+  const handle3DRedirect = () => {
+    if (effectiveRaceId) navigate(`/scene?raceId=${effectiveRaceId}`);
+  };
+
+  const handleExit = () => {
+    navigate("/menu");
+  };
+
   return (
-    <div className="map">
-      <MapContainer center={[41.3851, 2.1734]} zoom={13} style={{ width: "100%", height: "100vh" }}>
-        <TileLayer
-          url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
-          attribution="&copy; Google Maps"
-        />
+    <div className="map-container" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", margin: 0, padding: 0 }}>
+      <MapContainer center={[41.3851, 2.1734]} zoom={13} style={{ width: "100%", height: "100%" }}>
+        <TileLayer url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" attribution="&copy; Google Maps" />
         <MapUpdater boats={finalBoatMarkers} />
-
-        {buoys.map((buoy) => (
-          <BuoyMarker key={buoy.id} lat={buoy.lat} lng={buoy.lng} name={buoy.name} />
+        {buoys.map((buoy, index) => (
+          <BuoyMarker key={buoy.id} lat={buoy.lat} lng={buoy.lng} name={buoy.name} highlight={index === nextBuoyIndex} />
         ))}
-
-        {finalBoatMarkers.map((boat, i) => (
-          <BoatMarker
-            key={i}
-            position={boat.position}
-            name={boat.name}
-            speed={boat.speed}
-            color={boat.color}
-            azimuth={boat.azimuth}
-          />
-        ))}
+        {buoys.length > 1 && (
+          <Polyline positions={buoyLinePositions} pathOptions={{ color: "#007bff", weight: 2, dashArray: "5,5" }} />
+        )}
+        {finalBoatMarkers.map((boat, i) => {
+          const seg = getBoatSegmentProgress(boat.position, buoys);
+          return (
+            <React.Fragment key={i}>
+              <BoatMarker
+                position={boat.position}
+                name={boat.name}
+                speed={boat.speed}
+                color={boat.color}
+                azimuth={boat.azimuth}
+                segmentProgress={seg ? seg.t : 0}
+              />
+              {boat.trail && boat.trail.length > 1 && (
+                <BoatTrail trail={boat.trail} color={boat.color} currentTime={race && race.endTmst ? currentTime : Date.now()} />
+              )}
+            </React.Fragment>
+          );
+        })}
+        {/* Flecha indicadora del líder hacia la siguiente boya */}
+        {rankedBoats.length > 0 && leaderNextBuoy && (
+          <NextBuoyArrow boatPos={rankedBoats[0].position} targetBuoy={leaderNextBuoy} color="#ffeb3b" />
+        )}
+        {/* Halo alrededor del líder */}
+        {leaderHalo}
       </MapContainer>
 
-      <button className="control-btn logout-btn" onClick={() => navigate("/")}>
-        🚪 Logout
-      </button>
-      <button className="control-btn help-btn" onClick={() => setShowHelp(true)}>
-        ❓ Help
-      </button>
-      <button className="control-btn threeD-btn" onClick={() => navigate("/scene")}>
-        🌐 3D
+      {/* Podio */}
+      <Podio boats={rankedBoats} />
+
+      {/* Botón "volver atrás" */}
+      <button
+        onClick={handleExit}
+        title="Back to Old Recordings"
+        style={{
+          position: "absolute",
+          top: "80px",
+          left: "7px",
+          zIndex: 9999,
+          width: "30px",
+          height: "35px",
+          border: "none",
+          borderRadius: "8px",
+          background: "#f44336",
+          color: "#fff",
+          fontSize: "1.4rem",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+          transition: "background-color 0.2s ease",
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#d32f2f"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#f44336"; }}
+      >
+        ↩
       </button>
 
-      {!raceId && (
-        <button className="control-btn chat-btn" onClick={() => setShowChat(!showChat)}>
-          💬 Chat
-        </button>
-      )}
-
-      {raceId && isRaceFinished && race.startTmst && race.endTmst && (
-        <div className="playback-controls">
-          <button onClick={() => setIsPlaying(false)}>Pause</button>
+      {/* Controles de replay y live */}
+      {race && race.endTmst ? (
+        <div style={{
+            position: "absolute",
+            bottom: "20px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            padding: "12px 20px",
+            borderRadius: "15px",
+            background: "rgba(255, 255, 255, 0.2)",
+            backdropFilter: "blur(6px)",
+            boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)",
+          }}>
           <button
-            onClick={() => {
-              setIsPlaying(true);
-              setPlaybackSpeed(1000);
+            style={{
+              fontSize: "1.4rem",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "#333",
+              transition: "color 0.3s ease",
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#007bff")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#333")}
+            onClick={() => setIsPlaying(!isPlaying)}
+            title={isPlaying ? "Pause" : "Play"}
           >
-            x1
+            {isPlaying ? "⏸" : "▶"}
           </button>
           <button
-            onClick={() => {
-              setIsPlaying(true);
-              setPlaybackSpeed(500);
+            style={{
+              fontSize: "0.95rem",
+              background: "none",
+              border: "1px solid #333",
+              borderRadius: "8px",
+              padding: "6px 12px",
+              cursor: "pointer",
+              color: "#333",
+              transition: "background-color 0.3s ease, color 0.3s ease",
             }}
-          >
-            x2
-          </button>
-          <button
-            onClick={() => {
-              setIsPlaying(true);
-              setPlaybackSpeed(200);
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#007bff";
+              e.currentTarget.style.color = "#fff";
             }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+              e.currentTarget.style.color = "#333";
+            }}
+            onClick={handleCycleSpeed}
           >
-            x5
+            x{speedOptions[speedIndex]}
           </button>
-
           <input
             type="range"
             min={race.startTmst}
@@ -263,62 +470,162 @@ const Map2D = () => {
             step={1000}
             value={currentTime}
             onChange={(e) => setCurrentTime(Number(e.target.value))}
+            style={{ width: "140px", cursor: "pointer" }}
           />
-
-          <span className="time-display">
+          <span style={{ fontWeight: "bold", minWidth: "70px", textAlign: "center", color: "#333" }}>
             {new Date(currentTime).toLocaleTimeString()}
           </span>
+          <button
+            style={{
+              fontSize: "0.95rem",
+              background: "linear-gradient(135deg, #42a5f5, #1e88e5)",
+              border: "none",
+              borderRadius: "8px",
+              color: "#fff",
+              padding: "6px 12px",
+              cursor: "pointer",
+              boxShadow: "0 2px 5px rgba(0,0,0,0.15)",
+              transition: "opacity 0.3s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            onClick={handle3DRedirect}
+            title="Go to 3D View"
+          >
+            3D
+          </button>
+        </div>
+      ) : (
+        <div style={{
+            position: "absolute",
+            bottom: "20px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            padding: "12px 20px",
+            borderRadius: "15px",
+            background: "rgba(255, 255, 255, 0.2)",
+            backdropFilter: "blur(6px)",
+            boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)",
+          }}>
+          <button
+            style={{
+              fontSize: "0.95rem",
+              background: "linear-gradient(135deg, #42a5f5, #1e88e5)",
+              border: "none",
+              borderRadius: "8px",
+              color: "#fff",
+              padding: "6px 12px",
+              cursor: "pointer",
+              boxShadow: "0 2px 5px rgba(0,0,0,0.15)",
+              transition: "opacity 0.3s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            onClick={handle3DRedirect}
+            title="Go to 3D View"
+          >
+            3D
+          </button>
+          <button
+            style={{
+              fontSize: "0.95rem",
+              background: "rgba(255,255,255,0.2)",
+              border: "none",
+              borderRadius: "10px",
+              padding: "8px 12px",
+              cursor: "pointer",
+              color: "#333",
+              transition: "background-color 0.3s ease, color 0.3s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#007bff";
+              e.currentTarget.style.color = "#fff";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.2)";
+              e.currentTarget.style.color = "#333";
+            }}
+            onClick={() => setShowChat(!showChat)}
+            title="Chat"
+          >
+            💬 Chat
+          </button>
         </div>
       )}
 
-      {showHelp && (
-        <div className="help-popup">
-          <div className="help-popup-content">
-            <h2>Help Information</h2>
-            <p>Welcome to the Smart Navigation platform! Some tips:</p>
-            <ul>
-              <li>Use the 2D Map to track real-time location or replay old races.</li>
-              <li>Switch to 3D View for an immersive experience.</li>
-              {!raceId && <li>Use the Chat to communicate with other users in real time.</li>}
-              <li>Click on a ship marker to see details.</li>
-            </ul>
-            <button className="close-help-btn" onClick={() => setShowHelp(false)}>
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-
-      {!raceId && showChat && (
-        <div className="chat-popup">
-          <div className="chat-header">
-            <h3>💬 Chat</h3>
-            <button className="close-chat-btn" onClick={() => setShowChat(false)}>
-              ×
-            </button>
-          </div>
-          <div className="chat-box">
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`chat-message ${msg.sender === "You" ? "sent" : "received"}`}
-              >
-                <strong>{msg.sender}: </strong>
-                {msg.text}
-              </div>
-            ))}
-          </div>
-          <div className="chat-input">
-            <input
-              type="text"
-              placeholder="Type a message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-            />
-            <button onClick={handleSendMessage}>Send</button>
-          </div>
-        </div>
+      {!effectiveRaceId && (
+        <>
+          <button
+            style={{
+              position: "absolute",
+              top: "20px",
+              right: "20px",
+              zIndex: 9999,
+              background: "rgba(255, 255, 255, 0.2)",
+              backdropFilter: "blur(6px)",
+              padding: "8px 12px",
+              borderRadius: "10px",
+              cursor: "pointer",
+              border: "none",
+              fontSize: "0.95rem",
+              color: "#333",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+              transition: "background-color 0.3s ease, color 0.3s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#007bff";
+              e.currentTarget.style.color = "#fff";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.2)";
+              e.currentTarget.style.color = "#333";
+            }}
+            onClick={() => setShowChat(!showChat)}
+          >
+            <span>💬</span>
+            <span>Chat</span>
+          </button>
+          <button
+            style={{
+              position: "absolute",
+              top: "20px",
+              right: "100px",
+              zIndex: 9999,
+              background: "rgba(255, 255, 255, 0.2)",
+              backdropFilter: "blur(6px)",
+              padding: "8px 12px",
+              borderRadius: "10px",
+              cursor: "pointer",
+              border: "none",
+              fontSize: "0.95rem",
+              color: "#333",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+              transition: "background-color 0.3s ease, color 0.3s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#e53935";
+              e.currentTarget.style.color = "#fff";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.2)";
+              e.currentTarget.style.color = "#333";
+            }}
+            onClick={() => navigate("/")}
+          >
+            <span>🚪</span>
+            <span>Logout</span>
+          </button>
+        </>
       )}
     </div>
   );

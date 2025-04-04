@@ -1,13 +1,16 @@
-// AddRace.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './AddRace.css';
+import "./AddRace.css";
 
 const AddRace = () => {
   const [raceName, setRaceName] = useState('');
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
+
+  const handleBack = () => {
+    navigate("/menu");
+  };
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -23,9 +26,6 @@ const AddRace = () => {
     reader.onload = async (event) => {
       try {
         const jsonData = JSON.parse(event.target.result);
-        // Se asume que el archivo JSON contiene los campos:
-        // buoys, positions, startTmst, endTmst, etc.
-        // Se agrega el nombre que ha introducido el usuario.
         const raceData = {
           name: raceName,
           ...jsonData,
@@ -42,7 +42,6 @@ const AddRace = () => {
 
         if (response.ok) {
           setMessage("Regata subida correctamente.");
-          // Redirige a la pantalla de grabaciones (o donde desees)
           navigate("/old-records");
         } else {
           const data = await response.json();
@@ -58,24 +57,32 @@ const AddRace = () => {
 
   return (
     <div className="add-race-container">
-      <h2>Añadir Carrera</h2>
-      <form onSubmit={handleSubmit} className="add-race-form">
-        <label>
-          Nombre de la Carrera:
-          <input
-            type="text"
-            value={raceName}
-            onChange={(e) => setRaceName(e.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Seleccionar Archivo (.json):
-          <input type="file" accept=".json" onChange={handleFileChange} required />
-        </label>
-        <button type="submit">Subir Carrera</button>
-      </form>
-      {message && <p className="message">{message}</p>}
+      <header className="old-recordings-banner">
+        <div className="banner-content">
+          <button onClick={handleBack} className="back-btn">↩</button>
+          <h1>Añadir Carrera</h1>
+        </div>
+      </header>
+      <main className="add-race-main">
+        <h2>Sube el archivo JSON de la carrera</h2>
+        <form onSubmit={handleSubmit} className="add-race-form">
+          <div className="form-group">
+            <label>Nombre de la Carrera:</label>
+            <input
+              type="text"
+              value={raceName}
+              onChange={(e) => setRaceName(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Seleccionar Archivo (.json):</label>
+            <input type="file" accept=".json" onChange={handleFileChange} required />
+          </div>
+          <button type="submit">Subir Carrera</button>
+        </form>
+        {message && <p className="message">{message}</p>}
+      </main>
     </div>
   );
 };
