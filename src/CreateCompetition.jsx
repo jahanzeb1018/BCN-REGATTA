@@ -6,7 +6,7 @@ const CreateCompetition = () => {
   const [name, setName] = useState("");
   const [competitionId, setCompetitionId] = useState("");
   const [error, setError] = useState("");
-  const [buoys, setBuoys] = useState([]); // Cada boya: { name, lat, lng }
+  const [buoys, setBuoys] = useState([]); 
   const [buoyMessage, setBuoyMessage] = useState("");
   const navigate = useNavigate();
 
@@ -93,7 +93,6 @@ const CreateCompetition = () => {
 
   return (
     <div className="create-competition-page">
-      {/* Banner superior */}
       <header className="cc-banner">
         <div className="cc-banner-content">
           <button onClick={handleBack} className="cc-back-btn">↩</button>
@@ -101,7 +100,6 @@ const CreateCompetition = () => {
         </div>
       </header>
 
-      {/* Contenido principal */}
       <main className="cc-container">
         {/* Card para crear la competición */}
         <div className="cc-card">

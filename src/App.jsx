@@ -9,8 +9,8 @@ import Scene from "./Scene";
 import Menu from "./Menu";
 import OldRecordings from "./OldRecordings";
 import RaceReplay2D from "./RaceReplay2D";
-import RaceReplay3D from "./RaceReplay3D"; // NUEVO COMPONENTE
-import ProtectedRoute from "./ProtectedRoute"; // Ruta protegida
+import RaceReplay3D from "./RaceReplay3D"; 
+import ProtectedRoute from "./ProtectedRoute"; 
 import CreateCompetition from "./CreateCompetition";
 import AddRace from "./AddRace";
 import DirectCompetitionAdmin from "./DirectCompetitionAdmin";

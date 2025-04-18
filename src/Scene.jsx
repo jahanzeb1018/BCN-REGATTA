@@ -16,7 +16,6 @@ import buoyModel from "/src/assets/buoy/buoy.glb";
 import barcelonaModel from "/src/assets/barcelona/BCN v10.glb";
 import waterNormals from "/src/assets/waternormals.jpg";
 
-// Constantes de geolocalización y escala
 const LAT0 = 41.383787222715334;
 const LON0 = 2.1996051201829054;
 const METERS_PER_DEG_LAT = 111320;
@@ -30,12 +29,10 @@ function latLonToWorld(lat, lon) {
   return { x: x * WORLD_SCALE, z: z * WORLD_SCALE };
 }
 
-// Caches de modelos
 let boatModelCache = null;
 let buoyModelCache = null;
 let barcelonaModelCache = null;
 
-// Parámetros iniciales del sol (se actualizarán automáticamente)
 const parameters = { elevation: 0, azimuth: 65 };
 
 const Scene = () => {
@@ -45,7 +42,6 @@ const Scene = () => {
 
   const isEmbedded = window.self !== window.top;
 
-  // Estados
   const [showChat, setShowChat] = useState(false);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -55,32 +51,27 @@ const Scene = () => {
   const [currentTimeState, setCurrentTimeState] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
 
-  // Usamos un ref para mantener el valor actualizado del tiempo
   const timeRef = useRef(currentTimeState);
   useEffect(() => {
     timeRef.current = currentTimeState;
   }, [currentTimeState]);
 
-  // Velocidad de reproducción (modo replay)
   const [playbackSpeed, setPlaybackSpeed] = useState(1000);
   const speedOptions = [1, 2, 5];
   const [speedIndex, setSpeedIndex] = useState(0);
 
-  // Refs para la escena
   const sceneRef = useRef(null);
   const boatsMapRef = useRef({});
   const boatsArrayRef = useRef([]);
   const buoysMapRef = useRef({});
   const buoysArrayRef = useRef([]);
 
-  // Variables globales de Three.js
   let camera, renderer, controls, water, sky, sun;
   const loader = new GLTFLoader();
   const dracoLoader = new DRACOLoader();
   dracoLoader.setDecoderPath("https://www.gstatic.com/draco/v1/decoders/");
   loader.setDRACOLoader(dracoLoader);
 
-  // Autofocus
   const focusCenter = new THREE.Vector3(0, 0, 0);
   const focusCameraPos = new THREE.Vector3(0, 0, 0);
   let userIsInteracting = false;
@@ -93,7 +84,6 @@ const Scene = () => {
     }
   };
 
-  // updateSun utiliza timeRef.current para calcular la posición del sol
   function updateSun() {
     if (!sun) return;
   
@@ -103,8 +93,8 @@ const Scene = () => {
       currentDate.getHours() * 60 +
       currentDate.getMinutes() +
       currentDate.getSeconds() / 60;
-    const sunriseMinutes = 7 * 60 + 29; // 07:29 -> 449 minutos
-    const sunsetMinutes = 20 * 60 + 20; // 20:20 -> 1220 minutos
+    const sunriseMinutes = 7 * 60 + 29; 
+    const sunsetMinutes = 20 * 60 + 20; 
   
     let fraction;
     if (currentMinutes < sunriseMinutes) {
@@ -136,7 +126,6 @@ const Scene = () => {
     renderer.toneMappingExposure = exposure;
   }
   
-  // Forzar currentTimeState al recibir datos si es 0
   useEffect(() => {
     if (raceData && Number(raceData.startTmst) > 1000000 && currentTimeState === 0) {
       setCurrentTimeState(Number(raceData.startTmst));
@@ -228,7 +217,6 @@ const Scene = () => {
     }
     updateSunInternal();
   
-    // Eliminamos el GUI
   
     controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 10, 0);
@@ -461,7 +449,6 @@ const Scene = () => {
       }
     }
     update() {
-      // Actualizaciones para la ciudad si se requieren
     }
   }
   

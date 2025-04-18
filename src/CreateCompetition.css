@@ -1,4 +1,3 @@
-/* Página principal */
 .create-competition-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #f0f4ff, #e6e9f2);
@@ -8,7 +7,6 @@
   flex-direction: column;
 }
 
-/* Banner superior */
 .cc-banner {
   background: rgba(255, 255, 255, 0.95);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
@@ -46,10 +44,10 @@
   margin: 0;
 }
 
-/* Contenedor principal */
+
 .cc-container {
   width: 100%;
-  max-width: 800px; /* Un poco más ancho para evitar solapamientos */
+  max-width: 800px; 
   margin: 2rem auto;
   display: flex;
   flex-direction: column;
@@ -57,7 +55,6 @@
   padding: 0 1rem;
 }
 
-/* Tarjetas (cards) */
 .cc-card {
   background: #fff;
   border-radius: 10px;
@@ -68,7 +65,6 @@
   gap: 1rem;
 }
 
-/* Tarjeta de resultado */
 .cc-card-result {
   animation: fadeInUp 0.5s forwards;
 }
@@ -77,7 +73,6 @@
   animation: fadeInUp 0.5s forwards;
 }
 
-/* Animación para cards */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -89,7 +84,6 @@
   }
 }
 
-/* Títulos y subtítulos */
 .cc-title {
   margin: 0;
   font-size: 1.3rem;
@@ -102,7 +96,6 @@
   color: #666;
 }
 
-/* Formulario principal */
 .cc-form {
   display: flex;
   flex-direction: column;
@@ -122,7 +115,6 @@
   outline: none;
 }
 
-/* Botones primarios y secundarios */
 .cc-btn-primary,
 .cc-btn-secondary,
 .cc-btn-danger {
@@ -135,7 +127,6 @@
   align-self: flex-start;
 }
 
-/* Botón primario */
 .cc-btn-primary {
   background: linear-gradient(135deg, #6a11cb, #2575fc);
   color: #fff;
@@ -146,7 +137,6 @@
   transform: translateY(-2px);
 }
 
-/* Botón secundario */
 .cc-btn-secondary {
   background: #eee;
   color: #333;
@@ -157,7 +147,6 @@
   transform: translateY(-2px);
 }
 
-/* Botón de peligro (Quitar) */
 .cc-btn-danger {
   background: #ff6b6b;
   color: #fff;
@@ -168,7 +157,6 @@
   transform: translateY(-2px);
 }
 
-/* Mensajes */
 .cc-error {
   color: #ff6b6b;
   font-size: 0.95rem;
@@ -180,7 +168,6 @@
   font-size: 0.95rem;
 }
 
-/* ID Container */
 .cc-id-container {
   display: flex;
   align-items: center;
@@ -208,7 +195,6 @@
   border-color: #6a11cb;
 }
 
-/* Sección Boyas */
 .cc-buoy-row {
   display: flex;
   flex-wrap: wrap;
@@ -242,7 +228,6 @@
   outline: none;
 }
 
-/* Responsive */
 @media (max-width: 600px) {
   .cc-container {
     max-width: 95%;

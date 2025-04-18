@@ -8,7 +8,6 @@ const ProtectedRoute = ({ children }) => {
   const location = useLocation();
   const token = localStorage.getItem("token");
 
-  // Si estamos en la ruta "/scene" y el query raceId es el de demo, se muestra la escena sin login.
   if (location.pathname === "/scene") {
     const queryParams = new URLSearchParams(location.search);
     const raceId = queryParams.get("raceId");
@@ -17,7 +16,6 @@ const ProtectedRoute = ({ children }) => {
     }
   }
 
-  // Para todas las demás rutas se requiere el token.
   if (!token) {
     return <Navigate to="/login" replace />;
   }

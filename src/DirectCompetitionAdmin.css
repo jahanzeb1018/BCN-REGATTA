@@ -1,4 +1,3 @@
-/* Contenedor principal */
 .admin-container {
     font-family: Arial, sans-serif;
     background: linear-gradient(135deg, #f0f4ff, #e6e9f2);
@@ -6,7 +5,6 @@
     color: #333;
   }
   
-  /* Banner (estilo Old Recordings) */
   .old-recordings-banner {
     background: rgba(255, 255, 255, 0.95);
     padding: 1.5rem 2rem;
@@ -49,7 +47,6 @@
     color: #6a11cb;
   }
   
-  /* Loading overlay (igual que en Old Recordings) */
   .loading-overlay {
     position: fixed;
     top: 0;
@@ -82,7 +79,6 @@
     100% { transform: rotate(360deg); }
   }
   
-  /* Contenido principal */
   .admin-main {
     max-width: 1200px;
     margin: 0 auto;
@@ -96,7 +92,6 @@
     color: #28a745;
   }
   
-  /* Lista de competiciones */
   .competition-list {
     display: flex;
     flex-wrap: wrap;
@@ -131,7 +126,6 @@
     color: #666;
   }
   
-  /* Marcas para competiciones activas e inactivas */
   .competition-card.active {
     border: 2px solid #28a745;
   }
@@ -140,7 +134,6 @@
     opacity: 0.8;
   }
   
-  /* Indicador activo */
   .active-indicator {
     display: flex;
     flex-direction: column;
@@ -156,7 +149,6 @@
     font-size: 0.9rem;
   }
   
-  /* Botones: Se eliminó la transformación en hover para evitar el efecto borroso */
   .competition-card button {
     padding: 0.6rem 1.2rem;
     border: none;

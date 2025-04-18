@@ -25,16 +25,13 @@ const MiniMap2D = ({ replayData, currentTime }) => {
   const [boats, setBoats] = useState([]);
   const [buoys, setBuoys] = useState([]);
 
-  // Memoriza la paleta de colores para que no se recree en cada render
   const availableColors = useMemo(
     () => ["red", "blue", "green", "purple", "orange", "yellow", "cyan", "magenta", "lime"],
     []
   );
 
-  // Ref para almacenar los colores asignados a cada barco de forma persistente
   const assignedColorsRef = useRef({});
 
-  // Modo replay: calcular posiciones y estela a partir de replayData.positions
   useEffect(() => {
     if (replayData && currentTime) {
       const boatsFromReplay = [];
@@ -66,7 +63,6 @@ const MiniMap2D = ({ replayData, currentTime }) => {
     }
   }, [replayData, currentTime, availableColors]);
 
-  // Modo live: conexión por socket y actualización de la estela
   useEffect(() => {
     if (!replayData) {
       const socket = io("https://server-production-c33c.up.railway.app/", {
@@ -110,7 +106,6 @@ const MiniMap2D = ({ replayData, currentTime }) => {
     }
   }, [replayData]);
 
-  // Modo live: eliminar barcos inactivos
   useEffect(() => {
     if (!replayData) {
       const interval = setInterval(() => {

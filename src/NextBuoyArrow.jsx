@@ -4,7 +4,6 @@ import { Polyline } from "react-leaflet";
 
 const NextBuoyArrow = ({ boatPos, targetBuoy, color = "#fff" }) => {
   if (!boatPos || !targetBuoy) return null;
-  // Línea de ayuda: desde la posición del barco hasta la boya objetivo
   const positions = [boatPos, [targetBuoy.lat, targetBuoy.lng]];
   return (
     <Polyline

@@ -7,7 +7,7 @@ import BoatMarker from "./BoatMarker";
 import BuoyMarker from "./BuoyMarker";
 import BoatTrail from "./BoatTrail";
 import Podio from "./Podio";
-import NextBuoyArrow from "./NextBuoyArrow"; // Asegúrate de tener este componente
+import NextBuoyArrow from "./NextBuoyArrow"; 
 import io from "socket.io-client";
 import "./Map2D.css";
 
@@ -29,7 +29,6 @@ const MapUpdater = ({ boats }) => {
   return null;
 };
 
-// Función para calcular la distancia entre dos puntos (fórmula Haversine)
 const computeDistance = (lat1, lon1, lat2, lon2) => {
   const toRad = (value) => (value * Math.PI) / 180;
   const R = 6371e3;
@@ -42,10 +41,7 @@ const computeDistance = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
-/**
- * Función que detecta en qué segmento (fase) se encuentra el barco
- * y devuelve un objeto con la fase, la fracción de avance (t de 0 a 1) y el progreso acumulado.
- */
+
 const getBoatSegmentProgress = (boatPos, buoys) => {
   if (!buoys || buoys.length === 0) return null;
   const cumDistances = [0];
@@ -79,9 +75,7 @@ const getBoatSegmentProgress = (boatPos, buoys) => {
   return best;
 };
 
-/**
- * Calcula el recorrido total (suma de tramos, incluido el tramo final circular)
- */
+
 const computeTotalCourse = (buoys) => {
   if (!buoys || buoys.length === 0) return 0;
   let total = 0;

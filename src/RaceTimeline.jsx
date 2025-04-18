@@ -5,7 +5,6 @@ import "./RaceTimeline.css";
 const RaceTimeline = ({ buoys, leaderProgress, totalCourse }) => {
   if (!buoys || buoys.length === 0 || !totalCourse) return null;
 
-  // Calcular posición (en %) del líder sobre la línea de tiempo
   const progressPercent = Math.min((leaderProgress / totalCourse) * 100, 100);
 
   return (

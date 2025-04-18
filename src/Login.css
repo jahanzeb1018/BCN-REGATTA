@@ -1,4 +1,3 @@
-/* Eliminamos márgenes/padding para que sea pantalla completa */
 html,
 body {
   margin: 0;
@@ -7,29 +6,26 @@ body {
   height: 100%;
 }
 
-/* Contenedor principal sin márgenes, a pantalla completa */
 .login-container {
   width: 100vw;
   height: 100vh;
   position: relative;
-  overflow: hidden; /* Sin scroll accidental */
+  overflow: hidden; 
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Capa oscura semitransparente sobre la imagen de fondo */
 .login-overlay {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
-  z-index: 1; /* Por encima del fondo pero debajo del formulario */
+  z-index: 1; 
 }
 
-/* Contenedor del formulario */
 .auth-form-container {
   position: relative;
-  z-index: 2; /* Encima del overlay */
+  z-index: 2; 
   width: 350px;
   padding: 2rem;
   border-radius: 10px;
@@ -47,7 +43,6 @@ body {
   color: #333;
 }
 
-/* Formulario */
 .login-form {
   width: 100%;
   display: flex;
@@ -69,7 +64,6 @@ body {
   outline: none;
 }
 
-/* Botón "Log In" */
 .login-form button {
   padding: 0.8rem;
   font-size: 1rem;
@@ -85,14 +79,12 @@ body {
   background: linear-gradient(135deg, #2575fc, #6a11cb);
 }
 
-/* Mensaje de error */
 .error-message {
   color: #e53935;
   margin-bottom: 1rem;
   font-weight: bold;
 }
 
-/* Enlace para registrar */
 .register-link {
   margin-top: 1rem;
   color: #333;
@@ -108,11 +100,7 @@ body {
   text-decoration: underline;
 }
 
-/* =========================
-   MEDIA QUERIES PARA MÓVILES
-   Ajustar el contenedor y inputs 
-   para pantallas pequeñas
-========================= */
+
 @media (max-width: 480px) {
   .auth-form-container {
     width: 90%;
@@ -121,7 +109,7 @@ body {
   }
 
   .login-form input {
-    font-size: 1rem; /* se podría reducir un poco más si lo prefieres */
+    font-size: 1rem; 
   }
 
   .login-form button {

@@ -21,27 +21,23 @@ import threejsIcon from "/src/assets/threejs-icon.png";
 import leafletIcon from "/src/assets/leaflet-icon.png";
 import websocketIcon from "/src/assets/websocket-icon.png";
 
-// ID de la regata para la demo (sin requerir login)
 const DEMO_RACE_ID = "67d803b1dc9e83d822cfe941";
 
-// Paleta de colores y asignaciones
 const colorPalette = ["red", "blue", "green", "purple", "cyan", "orange", "lime", "pink", "yellow"];
 const assignedColors = {};
 
 const Home = () => {
-  // Estados para la demo 2D
+  
   const [race, setRace] = useState(null);
   const [buoys, setBuoys] = useState([]);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Velocidades x1, x2, x5
+  
   const speedOptions = [1, 2, 5];
   const [speedIndex, setSpeedIndex] = useState(0);
-  // Equivalente en ms
   const [playbackSpeed, setPlaybackSpeed] = useState(1000);
 
-  // Cargar la regata sin login
   useEffect(() => {
     fetch(`https://server-production-c33c.up.railway.app/api/races/${DEMO_RACE_ID}`)
       .then((res) => res.json())
@@ -55,7 +51,6 @@ const Home = () => {
       .catch(console.error);
   }, []);
 
-  // Modo Replay 2D
   useEffect(() => {
     if (!race || !race.endTmst) return;
     let intervalId;
@@ -74,13 +69,12 @@ const Home = () => {
     return () => clearInterval(intervalId);
   }, [isPlaying, race, playbackSpeed]);
 
-  // Calcular los barcos en cada frame (2D)
+  // Calcular los barcos en cada frame 2D
   let demoBoats = [];
   if (race && race.endTmst && race.positions) {
     Object.entries(race.positions).forEach(([boatName, posArray]) => {
       const relevantPos = [...posArray].reverse().find((p) => p.t <= currentTime);
       if (relevantPos) {
-        // Asignar un color a cada barco
         if (!assignedColors[boatName]) {
           assignedColors[boatName] = colorPalette.shift() || "gray";
         }
@@ -95,7 +89,6 @@ const Home = () => {
     });
   }
 
-  // Función para cambiar la velocidad de reproducción (2D)
   const handleCycleSpeed = () => {
     const newIndex = (speedIndex + 1) % speedOptions.length;
     setSpeedIndex(newIndex);
@@ -272,10 +265,9 @@ const Home = () => {
         <div className="demo-section" data-aos="fade-up">
           <h3>🚢 Demo Regatta</h3>
           <p className="demo-description">
-            Below is a live demonstration of the regatta <strong>{DEMO_RACE_ID}</strong>. 
+            Below is a live demonstration of one regatta. 
             First, you’ll see a real-time 2D playback that lets you adjust speed, pause, or jump 
-            through the entire race timeline. This example shows how straightforward it is to stay 
-            updated with each vessel’s position over time.
+            through the entire race timeline.
           </p>
 
           {/* Mapa 2D con Replay */}
@@ -344,13 +336,12 @@ const Home = () => {
           <h3 className="demo-3d-title">Interactive 3D Scene</h3>
           <p className="demo-description">
             We also provide an immersive 3D view for the same race. This environment uses accurate 
-            physics and smooth camera movements to create a vivid perspective on vessel interactions. 
-            Check it out below — the window size is responsive for demonstration, 
-            yet retains all core functionalities and dynamic updates.
+            physics and smooth camera movements to create a vivid perspective. 
+            Check it out below — the window size is responsive for demonstration.
           </p>
           <div className="demo-scene-container">
             <iframe
-              src={`/#/scene?raceId=${DEMO_RACE_ID}`}
+              src={`./#/scene?raceId=${DEMO_RACE_ID}`}
               style={{ width: "100%", height: "100%", border: "none" }}
               title="3D Demo"
             />

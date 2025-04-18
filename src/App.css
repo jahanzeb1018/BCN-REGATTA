@@ -142,7 +142,6 @@ button:hover {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
-/* Estilos para la pantalla de carga en la Scene */
 
 .scene-loading-overlay {
   position: fixed;

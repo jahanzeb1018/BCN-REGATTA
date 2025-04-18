@@ -1,16 +1,11 @@
-/* Estilos generales del contenedor */
 .home-container {
-  /* Se elimina el min-height para que el contenedor se adapte al contenido */
-  /* min-height: 100vh; */
-  /* No se usa overflow-x: hidden; aquí, ya que no se quiere forzar scroll interno */
+  
   width: 100%;
   background: linear-gradient(135deg, #f0f4ff, #e6e9f2);
   color: #333;
   font-family: Arial, sans-serif;
-  /* Se quitan propiedades que puedan generar scroll interno */
 }
 
-/* Banner Superior */
 .home-banner {
   background: rgba(255, 255, 255, 0.9);
   padding: 2rem;
@@ -43,7 +38,6 @@
   gap: 1rem;
 }
 
-/* Botones Login / Register (para invitados) */
 .auth-btn {
   padding: 0.8rem 1.5rem;
   border: 2px solid #6a11cb;
@@ -59,14 +53,12 @@
   color: white;
 }
 
-/* Contenedor Principal */
 .home-content {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
 }
 
-/* Sección de Introducción */
 .intro-section {
   text-align: center;
   margin-bottom: 4rem;
@@ -86,7 +78,6 @@
   margin: 0 auto;
 }
 
-/* Sección del Mapa 2D / 3D */
 .map-section {
   margin-bottom: 4rem;
 }
@@ -128,7 +119,6 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
-/* Sección de la Finalidad del Proyecto */
 .purpose-section {
   background: linear-gradient(135deg, #6a11cb, #2575fc);
   padding: 4rem 2rem;
@@ -192,7 +182,6 @@
   color: #e0e0e0;
 }
 
-/* Sección de Características */
 .features-section {
   margin-bottom: 4rem;
 }
@@ -232,7 +221,6 @@
   margin-bottom: 1.5rem;
 }
 
-/* Sección de Tecnologías */
 .tech-section {
   text-align: center;
   margin-bottom: 4rem;
@@ -261,7 +249,6 @@
   transform: scale(1.2);
 }
 
-/* Llamado a la Acción */
 .cta-section {
   text-align: center;
   margin-bottom: 4rem;
@@ -295,9 +282,7 @@
   background: linear-gradient(135deg, #2575fc, #6a11cb);
 }
 
-/* =========================
-   MEDIA QUERIES para pantallas móviles
-========================= */
+
 @media (max-width: 768px) {
   .home-banner {
     padding: 1rem;
@@ -439,7 +424,6 @@
   }
 }
 
-/* DEMO SECTION */
 .demo-section {
   margin-top: 3rem;
   text-align: center;
@@ -461,11 +445,9 @@
   margin: 0 auto 2rem auto;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   border-radius: 10px;
-  /* Se mantiene overflow hidden para recortar contenido extra sin scroll interno */
   overflow: hidden;
 }
 
-/* Ajustes para pantallas más pequeñas */
 @media (max-width: 768px) {
   .demo-map-container,
   .demo-scene-container {
@@ -479,7 +461,6 @@
   }
 }
 
-/* Controles de la demo (replay) */
 .demo-controls {
   margin: 1rem auto 2rem auto;
   display: flex;
@@ -534,7 +515,6 @@
   text-align: center;
 }
 
-/* Título del 3D */
 .demo-3d-title {
   margin-top: 1.5rem;
   margin-bottom: 1rem;

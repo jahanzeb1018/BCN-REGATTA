@@ -17,7 +17,6 @@ const DirectCompetitionAdmin = () => {
         headers: { Authorization: token },
       });
       const data = await res.json();
-      // Filtrar solo las competiciones en directo (endTmst === null)
       const live = data.filter((race) => race.endTmst === null);
       setLiveCompetitions(live);
     } catch (err) {
